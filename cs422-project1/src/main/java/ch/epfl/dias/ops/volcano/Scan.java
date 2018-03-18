@@ -27,9 +27,9 @@ public class Scan implements VolcanoOperator {
 	@Override
 	public DBTuple next() {
 		// TODO: Implement
-        this.store.getRow(this.index);
+        DBTuple next = this.store.getRow(this.index);
         this.index++;
-		return null;
+		return next;
 	}
 
 	@Override

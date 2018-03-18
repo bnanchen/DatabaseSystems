@@ -26,7 +26,8 @@ public class DBTuple {
 	 * @return cast of field
 	 */
 	public Integer getFieldAsInt(int fieldNo) {
-		return (Integer) fields[fieldNo];
+		//return Integer.parseInt((String)fields[fieldNo]);
+        return (Integer) fields[fieldNo];
 	}
 
 	public Double getFieldAsDouble(int fieldNo) {

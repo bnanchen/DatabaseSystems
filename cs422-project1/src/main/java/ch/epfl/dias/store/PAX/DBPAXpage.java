@@ -16,6 +16,7 @@ public class DBPAXpage {
         this.minipages = minipages;
         this.types = types;
         this.minipagenumb = tuplesPerPage;
+        this.eof = false;
     }
 
     public DBPAXpage() {

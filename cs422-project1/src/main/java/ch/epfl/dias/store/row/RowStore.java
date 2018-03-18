@@ -10,6 +10,8 @@ import java.util.List;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.Store;
 
+import javax.xml.crypto.Data;
+
 public class RowStore extends Store {
     
     // TODO: Add required structures
@@ -34,10 +36,37 @@ public class RowStore extends Store {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.table = new DBTuple[lines.size()];
+        this.table = new DBTuple[lines.size()+1];
         for (int i = 0; i < lines.size(); i++) {
-            table[i] = new DBTuple(lines.get(i).split(delimiter), schema);
+            String arr[] = lines.get(i).split(delimiter);
+            table[i] = new DBTuple(castFill(arr), schema);
+            //System.out.println(table[i].getFieldAsInt(0));
         }
+        table[lines.size()] = new DBTuple();
+    }
+
+    // function to fill correctly
+    private Object[] castFill(String[] arr) {
+        Object[] castArr = new Object[arr.length];
+        int index = 0;
+        for (DataType dt : this.schema) {
+            switch (dt) {
+                case STRING:
+                    castArr[index] = arr[index];
+                    break;
+                case BOOLEAN:
+                    castArr[index] = Boolean.parseBoolean(arr[index]);
+                    break;
+                case DOUBLE:
+                    castArr[index] = Double.parseDouble(arr[index]);
+                    break;
+                case INT:
+                    castArr[index] = Integer.parseInt(arr[index]);
+                    break;
+            }
+            index++;
+        }
+        return castArr;
     }
     
     @Override
