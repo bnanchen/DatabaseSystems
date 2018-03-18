@@ -23,5 +23,5 @@ hs_err_pid*
 
 input/
 
-.idea/
+.idea
 *.iml
