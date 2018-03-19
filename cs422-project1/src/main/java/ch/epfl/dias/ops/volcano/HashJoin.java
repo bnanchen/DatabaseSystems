@@ -40,7 +40,6 @@ public class HashJoin implements VolcanoOperator {
                 hashes.get(next.fields[leftFieldNo]).add(next);
             } else {
                 ArrayList<DBTuple> listTuples = new ArrayList<>();
-
                 listTuples.add(next);
                 hashes.put(next.fields[leftFieldNo], listTuples);
             }

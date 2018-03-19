@@ -46,8 +46,16 @@ public class ProjectAggregate implements VolcanoOperator {
                     index += 1;
                     next = child.next();
                 }
-                result[0] = accumulator/index;
-                returnTuple =  new DBTuple(result, dtArray);
+                switch (dt) {
+                    case INT:
+                        result[0] = (int)accumulator/(int)index;
+                        break;
+                    case DOUBLE:
+                        result[0] = (double)accumulator/(double)index;
+                        break;
+                        default: throw new IllegalArgumentException();
+                }
+                returnTuple =  new DBTuple(result, dtArray); // TODO correctly handled?
                 break;
             case MAX: case MIN:
                 ArrayList columns = new ArrayList<>();

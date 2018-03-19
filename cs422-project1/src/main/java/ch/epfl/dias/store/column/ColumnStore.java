@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import ch.epfl.dias.store.DataType;
@@ -38,10 +39,10 @@ public class ColumnStore extends Store {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Object[][] bycolumns = new Object[schema.length][lines.size()];
+        String[][] bycolumns = new String[schema.length][lines.size()];
         for (int i = 0; i < lines.size(); i++) {
             int index = 0;
-            for (Object j : lines.get(i).split(delimiter)) {
+            for (String j : lines.get(i).split(delimiter)) {
                 bycolumns[index][i] = j;
                 index++;
             }
@@ -51,7 +52,7 @@ public class ColumnStore extends Store {
 //            System.out.println("");
         }
         for (int i = 0; i < schema.length; i++) {
-            Object[] column = new Object[lines.size()];
+            String[] column = new String[lines.size()];
             for (int j = 0; j < lines.size(); j++) {
                 column[j] = bycolumns[i][j];
             }
@@ -59,8 +60,38 @@ public class ColumnStore extends Store {
 //                System.out.print(column[a]);
 //            }
 //            System.out.println("");
-            this.table[i] = new DBColumn(column, schema[i]);
+            this.table[i] = new DBColumn(castFill(column, i), schema[i]);
         }
+    }
+
+    // function to fill correctly
+    private Object[] castFill(String[] arr, int dtIndex) {
+        Object[] castArr = new Object[arr.length];
+            switch (schema[dtIndex]) {
+                case STRING:
+                    castArr = arr;
+                    break;
+                case BOOLEAN:
+                    for (int i = 0; i < arr.length; i++) {
+                        castArr[i] = Boolean.parseBoolean(arr[i]);
+                    }
+                    break;
+                case DOUBLE:
+                    for (int i = 0; i < arr.length; i++) {
+                        castArr[i] = Double.parseDouble(arr[i]);
+                    }
+                    break;
+                case INT:
+                    for (int i = 0; i < arr.length; i++) {
+                        castArr[i] = Integer.parseInt(arr[i]);
+                    }
+                    break;
+            }
+        return castArr;
+    }
+
+    public int getNumberOfColumns() {
+        return table.length;
     }
     
     @Override
@@ -68,7 +99,7 @@ public class ColumnStore extends Store {
         // TODO: Implement
         DBColumn[] columns = new DBColumn[columnsToGet.length];
         for (int i = 0; i < columnsToGet.length; i ++) {
-            columns[0] = this.table[columnsToGet[i]];
+            columns[i] = this.table[columnsToGet[i]];
         }
         return columns;
     }

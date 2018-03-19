@@ -19,7 +19,6 @@ public class DBColumn {
         this.eof = false;
     }
 
-    // TODO Useful?
     public DBColumn() {
         this.eof = true;
     }
@@ -28,7 +27,7 @@ public class DBColumn {
         // TODO: Implement
         Integer columnInt[] = new Integer[column.length];
         for (int i = 0; i < column.length; i++) {
-            columnInt[i] = Integer.valueOf((String)column[i]);
+            columnInt[i] = (Integer)column[i];
         }
         return columnInt;
     }
