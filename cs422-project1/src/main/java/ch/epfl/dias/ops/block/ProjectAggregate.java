@@ -5,6 +5,10 @@ import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.column.DBColumn;
 
 import javax.xml.crypto.Data;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -73,7 +77,12 @@ public class ProjectAggregate implements BlockOperator {
                     result[0] = DoubleStream.of(cooldoubleColumnMax).min();
                 } else if (dt == DataType.STRING) {
                     String[] stringColumn = columns[fieldNo].getAsString();
-                    // TODO need to do it?
+                    List<String> sorted = Arrays.asList(stringColumn);
+                    Collections.sort(sorted);
+                    if (agg == Aggregate.MAX) {
+                        result[0] = sorted.get(sorted.size());
+                    }
+                    result[0] = sorted.get(0);
                 }
                 DBColumn[] resultMinMax = {new DBColumn(result, dt)};
                 return resultMinMax;
