@@ -143,7 +143,6 @@ public class ProjectAggregate implements VectorOperator {
                 int count = 0;
                 while (!columns[0].eof) {
                     Object[] doubleColumn = columns[fieldNo].column;
-//                    System.out.println(doubleColumn.length);
                     count += (int)(long) Stream.of(doubleColumn).count();
                     columns = child.next();
                 }

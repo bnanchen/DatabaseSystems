@@ -39,7 +39,7 @@ public class VectorTest {
         columnstoreData = new ColumnStore(schema, "input/data.csv", ",");
         columnstoreData.load();
 
-        columnstoreOrder = new ColumnStore(orderSchema, "input/orders_small.csv", "\\|");
+        columnstoreOrder = new ColumnStore(orderSchema, "input/orders_big.csv", "\\|");
         columnstoreOrder.load();
 
         columnstoreLineItem = new ColumnStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
@@ -49,7 +49,7 @@ public class VectorTest {
     @Test
     public void spTestData(){
         /* SELECT COUNT(*) FROM data WHERE col4 == 6 */
-        ch.epfl.dias.ops.vector.Scan scan = new ch.epfl.dias.ops.vector.Scan(columnstoreData, 4);
+        ch.epfl.dias.ops.vector.Scan scan = new ch.epfl.dias.ops.vector.Scan(columnstoreData, 100);
         ch.epfl.dias.ops.vector.Select sel = new ch.epfl.dias.ops.vector.Select(scan, BinaryOp.EQ, 3, 6);
         ch.epfl.dias.ops.vector.ProjectAggregate agg = new ch.epfl.dias.ops.vector.ProjectAggregate(sel, Aggregate.COUNT, DataType.INT, 2);
 
@@ -64,7 +64,7 @@ public class VectorTest {
     @Test
     public void spTestOrder(){
         /* SELECT COUNT(*) FROM data WHERE col0 == 6 */
-        ch.epfl.dias.ops.vector.Scan scan = new ch.epfl.dias.ops.vector.Scan(columnstoreOrder, 4);
+        ch.epfl.dias.ops.vector.Scan scan = new ch.epfl.dias.ops.vector.Scan(columnstoreOrder, 100);
         ch.epfl.dias.ops.vector.Select sel = new ch.epfl.dias.ops.vector.Select(scan, BinaryOp.EQ, 0, 6);
         ch.epfl.dias.ops.vector.ProjectAggregate agg = new ch.epfl.dias.ops.vector.ProjectAggregate(sel, Aggregate.COUNT, DataType.INT, 2);
 
@@ -79,7 +79,7 @@ public class VectorTest {
     @Test
     public void spTestLineItem(){
         /* SELECT COUNT(*) FROM data WHERE col0 == 3 */
-        ch.epfl.dias.ops.vector.Scan scan = new ch.epfl.dias.ops.vector.Scan(columnstoreLineItem, 4);
+        ch.epfl.dias.ops.vector.Scan scan = new ch.epfl.dias.ops.vector.Scan(columnstoreLineItem, 100);
         ch.epfl.dias.ops.vector.Select sel = new ch.epfl.dias.ops.vector.Select(scan, BinaryOp.EQ, 0, 3);
         ch.epfl.dias.ops.vector.ProjectAggregate agg = new ch.epfl.dias.ops.vector.ProjectAggregate(sel, Aggregate.COUNT, DataType.INT, 2);
 
@@ -95,8 +95,8 @@ public class VectorTest {
     public void joinTest1(){
         /* SELECT COUNT(*) FROM order JOIN lineitem ON (o_orderkey = orderkey) WHERE orderkey = 3;*/
 
-        ch.epfl.dias.ops.vector.Scan scanOrder = new ch.epfl.dias.ops.vector.Scan(columnstoreOrder, 4);
-        ch.epfl.dias.ops.vector.Scan scanLineitem = new ch.epfl.dias.ops.vector.Scan(columnstoreLineItem, 4);
+        ch.epfl.dias.ops.vector.Scan scanOrder = new ch.epfl.dias.ops.vector.Scan(columnstoreOrder, 100);
+        ch.epfl.dias.ops.vector.Scan scanLineitem = new ch.epfl.dias.ops.vector.Scan(columnstoreLineItem, 100);
 
         /*Filtering on both sides */
         Select selOrder = new Select(scanOrder, BinaryOp.EQ,0,3);
@@ -116,8 +116,8 @@ public class VectorTest {
     public void joinTest2(){
         /* SELECT COUNT(*) FROM lineitem JOIN order ON (o_orderkey = orderkey) WHERE orderkey = 3;*/
 
-        ch.epfl.dias.ops.vector.Scan scanOrder = new ch.epfl.dias.ops.vector.Scan(columnstoreOrder, 4);
-        ch.epfl.dias.ops.vector.Scan scanLineitem = new ch.epfl.dias.ops.vector.Scan(columnstoreLineItem, 4);
+        ch.epfl.dias.ops.vector.Scan scanOrder = new ch.epfl.dias.ops.vector.Scan(columnstoreOrder, 100);
+        ch.epfl.dias.ops.vector.Scan scanLineitem = new ch.epfl.dias.ops.vector.Scan(columnstoreLineItem, 100);
 
         /*Filtering on both sides */
         Select selOrder = new Select(scanOrder, BinaryOp.EQ,0,3);

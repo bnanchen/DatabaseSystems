@@ -56,11 +56,13 @@ public class Join implements BlockOperator {
             if (hashes.get(rf) != null) {
                 for (int i = 0; i < leftColumn.length; i++) {
                     for (int idx : hashes.get(rf)) {
+                        // first add tuples from left column
                         result.get(i).add(leftColumn[i].column[idx]);
                     }
                 }
                 for (int i = leftColumn.length; i < leftColumn.length+rightColumn.length-1; i++) {
                     if (i != leftColumn.length+rightFieldNo) {
+                        // then tuples from right column
                         result.get(i).add(rightColumn[i-leftColumn.length].column[index]);
                     }
                 }
@@ -68,6 +70,7 @@ public class Join implements BlockOperator {
             index++;
         }
 
+        // reconstruction of the whole columns
         DBColumn[] columns = new DBColumn[leftColumn.length+rightColumn.length-1];
         DataType[] dtArray = new DataType[leftColumn.length+rightColumn.length-1];
         for (int i = 0; i < leftColumn.length+rightColumn.length-1; i++) {

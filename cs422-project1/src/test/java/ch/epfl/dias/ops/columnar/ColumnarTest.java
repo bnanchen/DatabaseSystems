@@ -37,7 +37,7 @@ public class ColumnarTest {
 		columnstoreData = new ColumnStore(schema, "input/data.csv", ",");
 		columnstoreData.load();
 
-		columnstoreOrder = new ColumnStore(orderSchema, "input/orders_small.csv", "\\|");
+		columnstoreOrder = new ColumnStore(orderSchema, "input/orders_big.csv", "\\|");
 		columnstoreOrder.load();
 
 		columnstoreLineItem = new ColumnStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
