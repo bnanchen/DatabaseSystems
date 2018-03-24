@@ -20,6 +20,13 @@ public class DBPAXpage {
     }
 
     public DBPAXpage() {
+        DBTuple emptyTuple = new DBTuple();
+        this.minipages = new DBTuple[]{emptyTuple};
+        this.minipagenumb = 1;
         this.eof = true;
+    }
+
+    public Integer getFieldAsInt(int fieldNo) {
+        return 0;
     }
 }

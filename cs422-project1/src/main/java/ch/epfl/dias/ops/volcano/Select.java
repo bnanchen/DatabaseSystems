@@ -52,6 +52,7 @@ public class Select implements VolcanoOperator {
             }
             next = child.next();
         }
+
         return next;
     }
 

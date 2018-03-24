@@ -5,8 +5,11 @@ import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.Store;
 import ch.epfl.dias.store.row.DBTuple;
 
+import javax.xml.crypto.Data;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 public class ProjectAggregate implements VolcanoOperator {
 
@@ -55,28 +58,55 @@ public class ProjectAggregate implements VolcanoOperator {
                         break;
                         default: throw new IllegalArgumentException();
                 }
-                returnTuple =  new DBTuple(result, dtArray); // TODO correctly handled?
+                returnTuple =  new DBTuple(result, dtArray);
                 break;
             case MAX: case MIN:
-                ArrayList columns = new ArrayList<>();
-                while(!next.eof) {
-                    columns.add(next.fields[fieldNo]);
-                    next = child.next();
+                if (dt == DataType.STRING) {
+                    ArrayList<String> columns = new ArrayList<String>();
+                    while(!next.eof) {
+                        columns.add(next.getFieldAsString(fieldNo));
+                        next = child.next();
+                    }
+                    for (int i = 0; i < columns.size(); i++) {
+                        while(columns.get(i).charAt(0) == ' ') {
+                            columns.set(i, removeCharAt(columns.get(i), 0));
+                        }
+                    }
+                    Collections.sort(columns); // TODO j'étais là
+                    System.out.println("yououou "+ columns.get(0).charAt(0));
+                    System.out.println(columns);
+                    result[0] = columns.get(0);
                 }
-                if (agg == Aggregate.MAX) {
-                    result[0] = Collections.max(columns); // TODO maybe doesn't work because Array of Objects
-                } else {
-                    result[0] = Collections.min(columns);
+                else {
+                    ArrayList columns = new ArrayList<>();
+                    while(!next.eof) {
+                        columns.add(next.fields[fieldNo]);
+                        next = child.next();
+                    }
+                    if (agg == Aggregate.MAX) {
+                        result[0] = Collections.max(columns);
+                    } else {
+                        result[0] = Collections.min(columns);
+                    }
                 }
                 returnTuple = new DBTuple(result, dtArray);
                 break;
             case SUM:
-                double sum = 0;
+                int sumInt = 0;
+                double sumDouble = 0.0;
                 while(!next.eof) {
-                    sum += next.getFieldAsDouble(fieldNo);
+                    if (dt == DataType.INT) {
+                        sumInt += next.getFieldAsInt(fieldNo);
+                    } else {
+                        sumDouble += next.getFieldAsDouble(fieldNo);
+                    }
                     next = child.next();
                 }
-                result[0] = sum;
+                if (dt == DataType.INT) {
+                    result[0] = sumInt;
+                } else {
+                    result[0] = sumDouble;
+                }
                 returnTuple = new DBTuple(result, dtArray);
                 break;
             case COUNT:
@@ -91,6 +121,10 @@ public class ProjectAggregate implements VolcanoOperator {
         }
         return returnTuple;
 	}
+
+    private static String removeCharAt(String s, int pos) {
+        return s.substring(0, pos) + s.substring(pos + 1);
+    }
 
 	@Override
 	public void close() {

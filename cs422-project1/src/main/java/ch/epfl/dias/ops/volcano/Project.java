@@ -27,6 +27,10 @@ public class Project implements VolcanoOperator {
 	public DBTuple next() {
 		// TODO: Implement
         DBTuple next = child.next();
+
+        if (next.eof) {
+            return new DBTuple();
+        }
         DataType dt[] = new DataType[fieldNo.length];
         Object tuples[] = new Object[fieldNo.length];
 

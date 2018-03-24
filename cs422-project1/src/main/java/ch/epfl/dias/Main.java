@@ -26,18 +26,18 @@ public class Main {
 //		rowstore.load();
 //        System.out.println(rowstore.getRow(0).fields[0]);
 
-		ColumnStore columnstore = new ColumnStore(orderSchema, "input/orders_big.csv", "\\|");
-		columnstore.load();
-		int[] columnsnb = {0};
-		System.out.println(columnstore.getColumns(columnsnb)[0].getAsInteger());
+//		ColumnStore columnstore = new ColumnStore(orderSchema, "input/orders_big.csv", "\\|");
+//		columnstore.load();
+//		int[] columnsnb = {0};
+//		System.out.println(columnstore.getColumns(columnsnb)[0].getAsInteger());
 
-//		PAXStore paxstore = new PAXStore(orderSchema, "input/orders_small.csv", "\\|", 3);
-//		paxstore.load();
-//        DBTuple row = paxstore.getRow(9);
-//		for (int i = 0; i < orderSchema.length; i++) {
-//		    System.out.println(row.fields[i]);
-//        }
-//		paxstore.getRow(0)
+		PAXStore paxstore = new PAXStore(orderSchema, "input/orders_small.csv", "\\|", 3);
+		paxstore.load();
+        DBTuple row = paxstore.getRow(9);
+		for (int i = 0; i < orderSchema.length; i++) {
+		    System.out.println(row.fields[i]);
+        }
+		paxstore.getRow(0);
 		// ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(paxstore);
 		// DBTuple currentTuple = scan.next();
 		// while (!currentTuple.eof) {

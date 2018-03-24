@@ -22,6 +22,8 @@ public class VectorTest {
     ColumnStore columnstoreData;
     ColumnStore columnstoreOrder;
     ColumnStore columnstoreLineItem;
+    ColumnStore columnstoreOrderBig;
+    ColumnStore columnstoreLineItemBig;
 
     @Before
     public void init() {
@@ -39,11 +41,17 @@ public class VectorTest {
         columnstoreData = new ColumnStore(schema, "input/data.csv", ",");
         columnstoreData.load();
 
-        columnstoreOrder = new ColumnStore(orderSchema, "input/orders_big.csv", "\\|");
+        columnstoreOrder = new ColumnStore(orderSchema, "input/orders_small.csv", "\\|");
         columnstoreOrder.load();
 
         columnstoreLineItem = new ColumnStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
         columnstoreLineItem.load();
+
+        columnstoreOrderBig = new ColumnStore(orderSchema, "input/orders_big.csv", "\\|");
+        columnstoreOrderBig.load();
+
+        columnstoreLineItemBig = new ColumnStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
+        columnstoreLineItemBig.load();
     }
 
     @Test

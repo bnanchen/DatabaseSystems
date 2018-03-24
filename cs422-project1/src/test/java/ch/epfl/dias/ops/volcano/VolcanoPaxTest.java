@@ -21,6 +21,8 @@ public class VolcanoPaxTest {
     PAXStore rowstoreData;
     PAXStore rowstoreOrder;
     PAXStore rowstoreLineItem;
+    PAXStore rowstoreOrderBig;
+    PAXStore rowstoreLineItemBig;
 
     @Before
     public void init()  {
@@ -70,10 +72,29 @@ public class VolcanoPaxTest {
         rowstoreData.load();
 
         rowstoreOrder = new PAXStore(orderSchema, "input/orders_small.csv", "\\|", 3);
-        rowstoreOrder.load();
+       rowstoreOrder.load();
 
         rowstoreLineItem = new PAXStore(lineitemSchema, "input/lineitem_small.csv", "\\|", 3);
         rowstoreLineItem.load();
+
+        rowstoreOrderBig = new PAXStore(orderSchema, "input/orders_big.csv", "\\|", 50);
+        rowstoreOrderBig.load();
+
+        rowstoreLineItemBig = new PAXStore(lineitemSchema, "input/lineitem_big.csv", "\\|", 50);
+    }
+
+    @Test
+    public void testScan() {
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreData);
+        scan.open();
+        DBTuple next = scan.next();
+        while(!next.eof) {
+            for (int i = 0; i < next.fields.length; i++) {
+                System.out.print(next.fields[i] +", ");
+            }
+            System.out.println("");
+            next = scan.next();
+        }
     }
 
     @Test
@@ -119,6 +140,188 @@ public class VolcanoPaxTest {
         DBTuple result = agg.next();
         int output = result.getFieldAsInt(0);
         assertTrue(output == 3);
+    }
+
+    @Test
+    public void testOrderSum() {
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.SUM, DataType.INT, 0);
+
+        agg.open();
+
+        DBTuple result = agg.next();
+        int output = result.getFieldAsInt(0);
+        System.out.println(output);
+        assertTrue(output == 17);
+    }
+
+    @Test
+    public void testOrderAvg() {
+        // with double
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.AVG, DataType.DOUBLE, 0);
+
+        // with int
+        ch.epfl.dias.ops.volcano.Scan scan_ = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg_ = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan_, Aggregate.AVG, DataType.INT, 0);
+
+
+        agg.open();
+
+        DBTuple result = agg.next();
+        DBTuple result_ = agg_.next();
+        double output = result.getFieldAsDouble(0);
+        int output_ = result_.getFieldAsInt(0);
+        assertTrue(output == 1.7);
+        assertTrue(output_ == 1);
+    }
+
+    @Test
+    public void testOrderMaxDouble() {
+        // with double
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.MAX, DataType.DOUBLE, 6);
+
+        agg.open();
+
+        DBTuple resultDouble = agg.next();
+        double outputDouble = resultDouble.getFieldAsDouble(0);
+        assertTrue(outputDouble == 0.10);
+    }
+
+    @Test
+    public void testOrderMaxInt() {
+        // with int
+        ch.epfl.dias.ops.volcano.Scan scanInt = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate aggInt = new ch.epfl.dias.ops.volcano.ProjectAggregate(scanInt, Aggregate.MAX, DataType.INT, 0);
+
+        aggInt.open();
+
+        DBTuple resultInt = aggInt.next();
+        int outputInt = resultInt.getFieldAsInt(0);
+        assertTrue(outputInt == 3);
+    }
+
+    @Test
+    public void testOrderMaxString() {
+        // with string
+        ch.epfl.dias.ops.volcano.Scan scanString = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate aggString = new ch.epfl.dias.ops.volcano.ProjectAggregate(scanString, Aggregate.MAX, DataType.STRING, 15);
+
+        aggString.open();
+
+        DBTuple resultString = aggString.next();
+        String outputString = resultString.getFieldAsString(0);
+        System.out.println("String "+ outputString);
+        assertTrue(outputString == "ven requests. deposits breach a");
+    }
+
+    @Test
+    public void testOrderMinDouble() {
+        // with double
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.MIN, DataType.DOUBLE, 6);
+
+        agg.open();
+
+        DBTuple resultDouble = agg.next();
+        double outputDouble = resultDouble.getFieldAsDouble(0);
+        assertTrue(outputDouble == 0.0);
+    }
+
+    @Test
+    public void testOrderMinInt() {
+        // with int
+        ch.epfl.dias.ops.volcano.Scan scanInt = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate aggInt = new ch.epfl.dias.ops.volcano.ProjectAggregate(scanInt, Aggregate.MIN, DataType.INT, 0);
+
+        aggInt.open();
+
+        DBTuple resultInt = aggInt.next();
+        int outputInt = resultInt.getFieldAsInt(0);
+        assertTrue(outputInt == 1);
+    }
+
+    @Test
+    public void testOrderMinString() {
+        // with string
+        ch.epfl.dias.ops.volcano.Scan scanString = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate aggString = new ch.epfl.dias.ops.volcano.ProjectAggregate(scanString, Aggregate.MIN, DataType.STRING, 15);
+
+        aggString.open();
+
+        DBTuple resultString = aggString.next();
+        String outputString = resultString.getFieldAsString(0);
+        System.out.println(outputString);
+        assertTrue(outputString == "arefully slyly ex");
+    }
+
+    @Test
+    public void testProjectI() {
+        ch.epfl.dias.ops.volcano.Scan scanOrder = new ch.epfl.dias.ops.volcano.Scan(rowstoreOrder);
+        int[] toProject = {0, 1, orderSchema.length-1};
+        ch.epfl.dias.ops.volcano.Project projectOrder = new ch.epfl.dias.ops.volcano.Project(scanOrder, toProject);
+
+        projectOrder.open();
+
+        DBTuple result = projectOrder.next();
+        assertTrue(result.getFieldAsInt(0) == 1);
+    }
+
+    @Test
+    public void testProjectII() {
+        ch.epfl.dias.ops.volcano.Scan scanOrder = new ch.epfl.dias.ops.volcano.Scan(rowstoreData);
+        int[] toProject = {0, 1, orderSchema.length-1};
+        ch.epfl.dias.ops.volcano.Project projectOrder = new ch.epfl.dias.ops.volcano.Project(scanOrder, toProject);
+
+        projectOrder.open();
+
+        DBTuple result = projectOrder.next();
+        int index = 1;
+        while(!result.eof) {
+            assertTrue(result.getFieldAsInt(0) == index);
+            result = projectOrder.next();
+            index++;
+        }
+    }
+
+    @Test
+    public void testSelectProject() {
+        ch.epfl.dias.ops.volcano.Scan scanOrder = new ch.epfl.dias.ops.volcano.Scan(rowstoreOrder);
+        int[] toProject = {0, 1, orderSchema.length-1};
+        ch.epfl.dias.ops.volcano.Project project = new ch.epfl.dias.ops.volcano.Project(scanOrder, toProject);
+        ch.epfl.dias.ops.volcano.Select select = new ch.epfl.dias.ops.volcano.Select(project,BinaryOp.EQ, 0, 1);
+
+        select.open();
+
+        DBTuple result = select.next();
+        assertTrue(result.getFieldAsInt(0) == 1);
+    }
+
+    @Test
+    public void testSelectProjectBig() {
+        ch.epfl.dias.ops.volcano.Scan scanOrder = new ch.epfl.dias.ops.volcano.Scan(rowstoreOrderBig);
+        int[] toProject = {0, 1, orderSchema.length-1};
+        ch.epfl.dias.ops.volcano.Project project = new ch.epfl.dias.ops.volcano.Project(scanOrder, toProject);
+        ch.epfl.dias.ops.volcano.Select select = new ch.epfl.dias.ops.volcano.Select(project,BinaryOp.EQ, 0, 1);
+
+        select.open();
+
+        DBTuple result = select.next();
+        assertTrue(result.getFieldAsInt(0) == 1);
+    }
+
+    @Test
+    public void testOrderMinDoubleBig() {
+        // with double
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItemBig);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.MIN, DataType.DOUBLE, 6);
+
+        agg.open();
+
+        DBTuple resultDouble = agg.next();
+        double outputDouble = resultDouble.getFieldAsDouble(0);
+        assertTrue(outputDouble == 0.0);
     }
 
     @Test

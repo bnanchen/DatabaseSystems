@@ -16,6 +16,8 @@ import ch.epfl.dias.store.Store;
 import ch.epfl.dias.store.row.DBTuple;
 import sun.nio.cs.StandardCharsets;
 
+import javax.xml.crypto.Data;
+
 public class PAXStore extends Store {
 
     // TODO: Add required structures
@@ -39,14 +41,14 @@ public class PAXStore extends Store {
         // TODO: Implement
         try {
             this.lines = Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8);
-            this.table = new DBPAXpage[(int)Math.ceil((double)lines.size()/(double)tuplesPerPage)];
+            this.table = new DBPAXpage[(int)Math.ceil((double)lines.size()/(double)tuplesPerPage)+1];
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Object[][] bycolumns = new Object[schema.length][lines.size()];
+        String[][] bycolumns = new String[schema.length][lines.size()];
         for (int i = 0; i < lines.size(); i++) {
             int index = 0;
-            for (Object j : lines.get(i).split(delimiter)) {
+            for (String j : lines.get(i).split(delimiter)) {
                 bycolumns[index][i] = j;
                 index++;
             }
@@ -59,23 +61,66 @@ public class PAXStore extends Store {
             DBTuple[] minipages = new DBTuple[schema.length];
             int tuplesnumb = Math.min(tuplesPerPage, lines.size() - (tuplesPerPage*index));
             for (int mpnumb = 0; mpnumb < schema.length; mpnumb++) { // number of minipages (#attributes)
-                Object[] fields = new Object[tuplesnumb];
+                String[] fields = new String[tuplesnumb];
                 System.arraycopy(bycolumns[mpnumb], tuplesPerPage*index, fields, 0,  tuplesnumb);
-                minipages[mpnumb] = new DBTuple(fields, Arrays.copyOfRange(schema, mpnumb, mpnumb+1));
+                DataType[] types = Arrays.copyOfRange(schema, mpnumb, mpnumb+1);
+//                Object[] oui = castFill(fields, types[0]);
+//                for (int i = 0; i < oui.length; i++) {
+//                    System.out.println("bobo "+ oui[i]);
+//                }
+                minipages[mpnumb] = new DBTuple(castFill(fields, types[0]), types);
+//                System.out.println(minipages[mpnumb].fields[0]);
             }
             this.table[index] = new DBPAXpage(minipages, schema, tuplesnumb);
+//            System.out.println("index pax "+ index );
             index++;
             PAXPagesnumb--;
         }
 
+//        System.out.println(table.length-1);
+        this.table[table.length-1] = new DBPAXpage();
+
+    }
+
+    private Object[] castFill(String[] arr, DataType dt) {
+        Object[] castArr = new Object[arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            switch (dt) {
+                case STRING:
+                    castArr[i] = arr[i];
+                    break;
+                case BOOLEAN:
+                    castArr[i] = Boolean.parseBoolean(arr[i]);
+                    break;
+                case DOUBLE:
+                    castArr[i] = Double.parseDouble(arr[i]);
+                    break;
+                case INT:
+                    castArr[i] = Integer.parseInt(arr[i]);
+                    break;
+            }
+        }
+        return castArr;
     }
 
     @Override
     public DBTuple getRow(int rownumber) {
+//        System.out.println("rownumber "+ rownumber);
         // TODO: Implement
         Object[] returnedFields = new Object[schema.length];
         int pagenumb = (int)Math.ceil(rownumber / tuplesPerPage);
-        int fieldnumb = Math.max((rownumber % tuplesPerPage), 0);
+        int fieldnumb = Math.max(rownumber % tuplesPerPage, 0); // row
+
+        if (this.table[pagenumb].minipages[0].eof) {
+            return new DBTuple();
+        }
+        try {
+            Object test = this.table[pagenumb].minipages[0].fields[fieldnumb];
+        } catch (java.lang.ArrayIndexOutOfBoundsException e) {
+            return new DBTuple();
+        }
+//        System.out.println("pagenumb "+ pagenumb);
+//        System.out.println("fieldnumb "+ fieldnumb);
 //        for (int i = 0; i < this.table.length; i++) {
 //            int tuplesnumb = Math.min(tuplesPerPage, lines.size() - (tuplesPerPage*i));
 //            for (int a = 0; a < schema.length; a++) {
@@ -87,9 +132,12 @@ public class PAXStore extends Store {
 //            System.out.println("-- end of minipages ---");
 //        }
         for (int minipagenumb = 0; minipagenumb < schema.length; minipagenumb++) {
+//            System.out.println(this.table[pagenumb].minipages[minipagenumb].fields.length);
+//            System.out.println(fieldnumb);
             returnedFields[minipagenumb] = this.table[pagenumb].minipages[minipagenumb].fields[fieldnumb];
+//            System.out.println("caca "+ this.table[pagenumb].minipages[minipagenumb].fields[fieldnumb]);
         }
-
+//        System.out.println("caca");
         return new DBTuple(returnedFields, schema);
     }
 }
