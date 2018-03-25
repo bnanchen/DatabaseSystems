@@ -31,7 +31,6 @@ public class Select implements VectorOperator {
 
 	@Override
 	public DBColumn[] next() {
-		// TODO: Implement
         DBColumn[] columns = child.next();
         DataType[] dtArray = new DataType[columns.length];
         for (int i = 0; i < columns.length; i++) {
@@ -47,13 +46,23 @@ public class Select implements VectorOperator {
             resultList.add(temp);
         }
 
-        while (!columns[0].eof) {
+        //while (!columns[0].eof) {
             ArrayList<ArrayList<Object>> tempResult = new ArrayList<>();
             for (DBColumn column1 : columns) {
                 ArrayList<Object> temp = new ArrayList<>(Arrays.asList(column1.column));
                 tempResult.add(temp);
             }
-            Integer[] column = columns[fieldNo].getAsInteger();
+            Integer[] column = new Integer[columns[fieldNo].column.length];
+            if (columns[fieldNo].type == DataType.INT) {
+                column = columns[fieldNo].getAsInteger();
+            } else {
+                Double[] columnTemp = columns[fieldNo].getAsDouble();
+                int index = 0;
+                for (Double l : columnTemp) {
+                    column[index] = l.intValue();
+                    index++;
+                }
+            }
             boolean testResult;
             int index = 0;
             for (int compareTo : column) {
@@ -64,7 +73,8 @@ public class Select implements VectorOperator {
                         break;
                     case EQ: testResult = compareTo == value;
                         break;
-                    case GE: testResult = compareTo >= value;
+                    case GE:
+                        testResult = compareTo >= value;
                         break;
                     case LE: testResult = compareTo <= value;
                         break;
@@ -85,14 +95,21 @@ public class Select implements VectorOperator {
                     resultList.get(i).add(tempResult.get(i).get(j));
                 }
             }
-            columns = child.next();
-        }
+            //columns = child.next();
+        //}
 
         DBColumn[] result = new DBColumn[resultList.size()];
 
         for (int i = 0; i < resultList.size(); i++) {
             result[i] = new DBColumn(resultList.get(i).toArray(), dtArray[i]);
         }
+
+//        for (int i = 0; i < result[0].column.length; i++) {
+//            for (int j = 0; j < result.length; j++) {
+//                System.out.print(result[j].column[i]+", ");
+//            }
+//            System.out.println();
+//        }
         return result;
 	}
 

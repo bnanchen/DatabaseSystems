@@ -50,7 +50,7 @@ public class VectorTest {
         columnstoreOrderBig = new ColumnStore(orderSchema, "input/orders_big.csv", "\\|");
         columnstoreOrderBig.load();
 
-        columnstoreLineItemBig = new ColumnStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
+        columnstoreLineItemBig = new ColumnStore(lineitemSchema, "input/lineitem_big.csv", "\\|");
         columnstoreLineItemBig.load();
     }
 
@@ -334,5 +334,30 @@ public class VectorTest {
         DBColumn[] result = agg.next();
         int output = result[0].getAsInteger()[0];
         assertTrue(output == 3);
+    }
+
+    @Test
+    public void query1() {
+        ch.epfl.dias.ops.vector.Scan scan = new ch.epfl.dias.ops.vector.Scan(columnstoreLineItemBig, 10);
+        ch.epfl.dias.ops.vector.Select projectAggregate = new ch.epfl.dias.ops.vector.Select(scan, BinaryOp.GE, 4, 15);
+        int[] projection = {1,4};
+        ch.epfl.dias.ops.vector.Project project = new ch.epfl.dias.ops.vector.Project(projectAggregate, projection);
+
+        project.open();
+        DBColumn[] result = project.next();
+        //int index = 0;
+        //int index2 = 0;
+        while(!result[0].eof) {
+//            System.out.println("passage "+ index);
+           // for (int i = 0; i < result[0].column.length; i++) {
+                //System.out.println(result[0].getAsInteger()[i] + ", "+ result[1].getAsDouble()[i]);
+              //  index2++;
+           // }
+
+            result = project.next();
+           // index++;
+        }
+       // System.out.println("index "+ index2);
+        project.close();
     }
 }

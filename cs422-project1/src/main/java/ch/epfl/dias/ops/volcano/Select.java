@@ -1,7 +1,10 @@
 package ch.epfl.dias.ops.volcano;
 
 import ch.epfl.dias.ops.BinaryOp;
+import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.row.DBTuple;
+
+import javax.xml.crypto.Data;
 
 public class Select implements VolcanoOperator {
 
@@ -27,7 +30,12 @@ public class Select implements VolcanoOperator {
         boolean testResult = false;
         DBTuple next = child.next();
         while (!testResult && !next.eof) {
-            int compareTo = next.getFieldAsInt(fieldNo);
+            int compareTo;
+            if (next.types[fieldNo] == DataType.DOUBLE) {
+                compareTo = next.getFieldAsDouble(fieldNo).intValue();
+            } else {
+                compareTo = next.getFieldAsInt(fieldNo);
+            }
             switch (op) {
                 case GT: testResult = compareTo > value;
                     break;

@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import ch.epfl.dias.ops.BinaryOp;
+import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.column.DBColumn;
+
+import javax.xml.crypto.Data;
 
 public class Select implements BlockOperator {
 
@@ -30,7 +33,17 @@ public class Select implements BlockOperator {
             ArrayList<Object> temp = new ArrayList<>(Arrays.asList(column1.column));
             tempResult.add(temp);
         }
-        Integer[] column = columns[fieldNo].getAsInteger();
+        Integer[] column = new Integer[columns[fieldNo].column.length];
+        if (columns[fieldNo].type == DataType.INT) {
+            column = columns[fieldNo].getAsInteger();
+        } else {
+            Double[] columnTemp = columns[fieldNo].getAsDouble();
+            int index = 0;
+            for (Double l : columnTemp) {
+                column[index] = l.intValue();
+                index++;
+            }
+        }
         boolean testResult;
         int index = 0;
         for (int compareTo : column) {

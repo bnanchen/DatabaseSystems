@@ -28,7 +28,7 @@ public class Scan implements VectorOperator {
             columnsToGet[i] = i;
         }
         columns = store.getColumns(columnsToGet);
-        remainingTuples = columns[0].column.length;
+        remainingTuples = columns[0].column.length; // TODO revenir
 	}
 
 	@Override
@@ -59,6 +59,12 @@ public class Scan implements VectorOperator {
         for (int i = 0; i < tempResult.size(); i++) {
             result[i] = new DBColumn(tempResult.get(i).toArray(), columns[i].type);
         }
+//        for (int i = 0; i < result[0].column.length; i++) {
+//            for (int j = 0; j < result.length; j++) {
+//                System.out.print(result[j].column[i]);
+//            }
+//            System.out.println();
+//        }
 		return result;
 	}
 

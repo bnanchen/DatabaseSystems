@@ -315,4 +315,20 @@ public class ColumnarTest {
 
 		assertTrue(output == 3);
 	}
+
+    @Test
+    public void query1() {
+        ch.epfl.dias.ops.block.Scan scan = new ch.epfl.dias.ops.block.Scan(columnstoreLineItemBig);
+        ch.epfl.dias.ops.block.Select projectAggregate = new ch.epfl.dias.ops.block.Select(scan, BinaryOp.GE, 4, 15);
+        int[] projection = {1,4};
+        ch.epfl.dias.ops.block.Project project = new ch.epfl.dias.ops.block.Project(projectAggregate, projection);
+        
+        DBColumn[] result = project.execute();
+        int index = 0;
+        for (int i = 0; i < result[0].column.length; i++) {
+            System.out.println(result[0].getAsInteger()[i]+ ", "+ result[1].getAsInteger()[i]);
+            index++;
+        }
+        System.out.println(index);
+    }
 }

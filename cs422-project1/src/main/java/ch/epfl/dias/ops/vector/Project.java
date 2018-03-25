@@ -26,10 +26,15 @@ public class Project implements VectorOperator {
         }
         int index = 0;
         for (int colIndex : fieldNo) {
-        	System.out.println(colIndex);
             result[index] = columns[colIndex];
             index++;
         }
+//        for (int i = 0; i < result[0].column.length; i++) {
+//            for (int j = 0; j < result.length; j++) {
+//                System.out.print(result[j].column[i]);
+//            }
+//            System.out.println();
+//        }
 		return result;
 	}
 

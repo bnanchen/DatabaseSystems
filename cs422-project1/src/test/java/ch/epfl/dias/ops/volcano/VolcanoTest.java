@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import ch.epfl.dias.ops.Aggregate;
 import ch.epfl.dias.ops.BinaryOp;
 import ch.epfl.dias.store.DataType;
+import ch.epfl.dias.store.column.DBColumn;
 import ch.epfl.dias.store.row.DBTuple;
 import ch.epfl.dias.store.row.RowStore;
 
@@ -79,7 +80,7 @@ public class VolcanoTest {
         rowstoreOrderBig = new RowStore(orderSchema, "input/orders_big.csv", "\\|");
         rowstoreOrderBig.load();
 
-        rowstoreLineItemBig = new RowStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
+        rowstoreLineItemBig = new RowStore(lineitemSchema, "input/lineitem_big.csv", "\\|");
         rowstoreLineItemBig.load();
     }
     
@@ -363,4 +364,23 @@ public class VolcanoTest {
 	    int output = result.getFieldAsInt(0);
 	    assertTrue(output == 3);
 	}
+
+	@Test
+    public void query1() {
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItemBig);
+        ch.epfl.dias.ops.volcano.Select projectAggregate = new ch.epfl.dias.ops.volcano.Select(scan, BinaryOp.GE, 4, 15);
+        int[] projection = {1,4};
+        ch.epfl.dias.ops.volcano.Project project = new ch.epfl.dias.ops.volcano.Project(projectAggregate, projection);
+
+        project.open();
+        DBTuple result = project.next();
+        int index = 0;
+        while(!result.eof) {
+            //System.out.println(result.getFieldAsInt(0) + ", "+ result.getFieldAsDouble(1));
+            result = project.next();
+            index++;
+        }
+        System.out.println(index);
+        project.close();
+    }
 }
