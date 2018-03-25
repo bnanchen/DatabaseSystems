@@ -110,13 +110,6 @@ public class Join implements VectorOperator {
             columns[i] = new DBColumn(result.get(i).toArray(), dtArray[i]);
         }
 
-//        for(int i = 0; i < columns[0].column.length; i++) {
-//            for (int j = 0; j < columns.length; j++) {
-//                System.out.print(columns[j].column[i] +" ");
-//            }
-//            System.out.println();
-//        }
-
         return columns;
     }
 

@@ -66,7 +66,6 @@ public class ProjectAggregate implements BlockOperator {
                         Collections.addAll(intColumnMax, integerColumnMax);
 
                         if (agg == Aggregate.MAX) {
-                            System.out.println();
                             result[0] = Collections.max(intColumnMax);
                         } else {
                             result[0] = Collections.min(intColumnMax);
@@ -79,7 +78,6 @@ public class ProjectAggregate implements BlockOperator {
                         Collections.addAll(doubleColumnMax, integerColumnMax);
 
                         if (agg == Aggregate.MAX) {
-                            System.out.println();
                             result[0] = Collections.max(doubleColumnMax);
                         } else {
                             result[0] = Collections.min(doubleColumnMax);

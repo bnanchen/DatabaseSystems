@@ -29,12 +29,7 @@ public class Project implements VectorOperator {
             result[index] = columns[colIndex];
             index++;
         }
-//        for (int i = 0; i < result[0].column.length; i++) {
-//            for (int j = 0; j < result.length; j++) {
-//                System.out.print(result[j].column[i]);
-//            }
-//            System.out.println();
-//        }
+
 		return result;
 	}
 

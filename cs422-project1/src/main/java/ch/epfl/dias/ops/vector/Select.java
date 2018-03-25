@@ -104,12 +104,6 @@ public class Select implements VectorOperator {
             result[i] = new DBColumn(resultList.get(i).toArray(), dtArray[i]);
         }
 
-//        for (int i = 0; i < result[0].column.length; i++) {
-//            for (int j = 0; j < result.length; j++) {
-//                System.out.print(result[j].column[i]+", ");
-//            }
-//            System.out.println();
-//        }
         return result;
 	}
 
