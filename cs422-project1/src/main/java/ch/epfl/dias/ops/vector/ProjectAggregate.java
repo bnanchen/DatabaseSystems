@@ -3,6 +3,7 @@ package ch.epfl.dias.ops.vector;
 import ch.epfl.dias.ops.Aggregate;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.column.DBColumn;
+import ch.epfl.dias.store.row.DBTuple;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,9 @@ public class ProjectAggregate implements VectorOperator {
     @Override
     public DBColumn[] next() {
         DBColumn[] columns = child.next();
+        if (columns[0].eof) {
+            return new DBColumn[]{new DBColumn()};
+        }
         Object result[] = new Object[1];
 
         switch (agg) {
@@ -206,22 +210,18 @@ public class ProjectAggregate implements VectorOperator {
                 if (dt == DataType.INT) {
                     while (!columns[0].eof) {
                         Integer[] integerColumn = columns[fieldNo].getAsInteger();
-                        int[] intColumn = new int[integerColumn.length];
                         for (int i = 0; i < integerColumn.length; i++) {
-                            intColumn[i] = integerColumn[i];
+                            sum += integerColumn[i].intValue();
                         }
-                        sum += IntStream.of(intColumn).sum();
                         columns = child.next();
                     }
 
                 } else if (dt == DataType.DOUBLE) {
                     while (!columns[0].eof) {
                         Double[] doubleColumn = columns[fieldNo].getAsDouble();
-                        double[] coolDoubleColumn = new double[doubleColumn.length];
                         for (int i = 0; i < doubleColumn.length; i++) {
-                            coolDoubleColumn[i] = doubleColumn[i];
+                            sum += doubleColumn[i].doubleValue();
                         }
-                        sum += DoubleStream.of(coolDoubleColumn).sum();
                         columns = child.next();
                     }
 

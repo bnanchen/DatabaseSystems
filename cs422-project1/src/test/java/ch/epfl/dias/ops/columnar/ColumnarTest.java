@@ -316,19 +316,65 @@ public class ColumnarTest {
 		assertTrue(output == 3);
 	}
 
-    @Test
-    public void query1() {
-        ch.epfl.dias.ops.block.Scan scan = new ch.epfl.dias.ops.block.Scan(columnstoreLineItemBig);
-        ch.epfl.dias.ops.block.Select projectAggregate = new ch.epfl.dias.ops.block.Select(scan, BinaryOp.GE, 4, 15);
-        int[] projection = {1,4};
-        ch.epfl.dias.ops.block.Project project = new ch.epfl.dias.ops.block.Project(projectAggregate, projection);
-        
-        DBColumn[] result = project.execute();
-        int index = 0;
-        for (int i = 0; i < result[0].column.length; i++) {
-            System.out.println(result[0].getAsInteger()[i]+ ", "+ result[1].getAsInteger()[i]);
-            index++;
-        }
-        System.out.println(index);
-    }
+//    @Test
+//    public void query1() {
+//        ch.epfl.dias.ops.block.Scan scan = new ch.epfl.dias.ops.block.Scan(columnstoreLineItemBig);
+//        ch.epfl.dias.ops.block.Select projectAggregate = new ch.epfl.dias.ops.block.Select(scan, BinaryOp.GE, 4, 15);
+//        int[] projection = {1,4};
+//        ch.epfl.dias.ops.block.Project project = new ch.epfl.dias.ops.block.Project(projectAggregate, projection);
+//
+//        DBColumn[] result = project.execute();
+//        int index = 0;
+//        for (int i = 0; i < result[0].column.length; i++) {
+//            index++;
+//        }
+//        System.out.println(index);
+//    }
+//
+//    @Test
+//    public void query2() {
+//        ch.epfl.dias.ops.block.Scan scanLine = new ch.epfl.dias.ops.block.Scan(columnstoreLineItemBig);
+//        ch.epfl.dias.ops.block.Scan scanOrder = new ch.epfl.dias.ops.block.Scan(columnstoreOrderBig);
+//        int[] projection = {0};
+//        ch.epfl.dias.ops.block.Project projectLine = new ch.epfl.dias.ops.block.Project(scanLine, projection);
+//        ch.epfl.dias.ops.block.Project projectOrder = new ch.epfl.dias.ops.block.Project(scanOrder, projection);
+//        ch.epfl.dias.ops.block.Join join = new ch.epfl.dias.ops.block.Join(projectLine, projectOrder, 0, 0);
+//
+//        DBColumn[] result = join.execute();
+//        for (int i = 0; i < result[0].column.length; i++) {
+//        }
+//    }
+//
+//    @Test
+//    public void query3() {
+//        ch.epfl.dias.ops.block.Scan scan = new ch.epfl.dias.ops.block.Scan(columnstoreLineItemBig);
+//        ch.epfl.dias.ops.block.Select projectAggregate = new ch.epfl.dias.ops.block.Select(scan, BinaryOp.GE, 4, 15);
+//        int[] projection = {1,4};
+//        ch.epfl.dias.ops.block.Project project = new ch.epfl.dias.ops.block.Project(projectAggregate, projection);
+//        ch.epfl.dias.ops.block.ProjectAggregate pj = new ch.epfl.dias.ops.block.ProjectAggregate(project, Aggregate.COUNT, DataType.INT, 0);
+//
+//        DBColumn[] result = pj.execute();
+//        int index = 0;
+//        for (int i = 0; i < result[0].column.length; i++) {
+//            System.out.println(result[0].column[0]);
+//            index++;
+//        }
+//        System.out.println(index);
+//    }
+//
+//    @Test
+//    public void query4() {
+//        ch.epfl.dias.ops.block.Scan scanLine = new ch.epfl.dias.ops.block.Scan(columnstoreLineItemBig);
+//        ch.epfl.dias.ops.block.Scan scanOrder = new ch.epfl.dias.ops.block.Scan(columnstoreOrderBig);
+//        int[] projectionLine = {0, 7};
+//        int[] projectionOrder = {0};
+//        ch.epfl.dias.ops.block.Project projectLine = new ch.epfl.dias.ops.block.Project(scanLine, projectionLine);
+//        ch.epfl.dias.ops.block.Project projectOrder = new ch.epfl.dias.ops.block.Project(scanOrder, projectionOrder);
+//        ch.epfl.dias.ops.block.Join join = new ch.epfl.dias.ops.block.Join(projectLine, projectOrder, 0, 0);
+//        ch.epfl.dias.ops.block.ProjectAggregate pj = new ch.epfl.dias.ops.block.ProjectAggregate(join, Aggregate.MAX, DataType.DOUBLE, 1);
+//
+//        DBColumn[] result = pj.execute();
+//        for (int i = 0; i < result[0].column.length; i++) {
+//        }
+//    }
 }

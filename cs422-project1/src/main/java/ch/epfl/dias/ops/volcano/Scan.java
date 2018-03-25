@@ -1,6 +1,7 @@
 package ch.epfl.dias.ops.volcano;
 
 import ch.epfl.dias.store.Store;
+import ch.epfl.dias.store.column.DBColumn;
 import ch.epfl.dias.store.row.DBTuple;
 
 public class Scan implements VolcanoOperator {
@@ -22,6 +23,9 @@ public class Scan implements VolcanoOperator {
 	@Override
 	public DBTuple next() {
         DBTuple next = this.store.getRow(this.index);
+		if (next.eof) {
+			return new DBTuple();
+		}
         this.index++;
 		return next;
 	}

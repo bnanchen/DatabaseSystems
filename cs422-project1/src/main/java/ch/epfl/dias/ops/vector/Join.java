@@ -8,26 +8,26 @@ import java.util.HashMap;
 
 public class Join implements VectorOperator {
 
-	private VectorOperator leftChild;
-	private VectorOperator rightChild;
-	private int leftFieldNo;
-	private int rightFieldNo;
+    private VectorOperator leftChild;
+    private VectorOperator rightChild;
+    private int leftFieldNo;
+    private int rightFieldNo;
 
-	public Join(VectorOperator leftChild, VectorOperator rightChild, int leftFieldNo, int rightFieldNo) {
+    public Join(VectorOperator leftChild, VectorOperator rightChild, int leftFieldNo, int rightFieldNo) {
         this.leftChild = leftChild;
         this.rightChild = rightChild;
         this.leftFieldNo = leftFieldNo;
         this.rightFieldNo = rightFieldNo;
-	}
+    }
 
-	@Override
-	public void open() {
+    @Override
+    public void open() {
         leftChild.open();
         rightChild.open();
-	}
+    }
 
-	@Override
-	public DBColumn[] next() {
+    @Override
+    public DBColumn[] next() {
         DBColumn[] rightColumns = rightChild.next();
         DBColumn[] leftColumns = leftChild.next();
 
@@ -54,57 +54,75 @@ public class Join implements VectorOperator {
             ArrayList<Object> col = new ArrayList<>();
             result.add(col);
         }
-
+        ArrayList<ArrayList<Object>> wholeLeftColumns = new ArrayList<>();
+        for (int i = 0; i < leftColumns.length; i++) {
+            ArrayList<Object> col = new ArrayList<>();
+            wholeLeftColumns.add(col);
+        }
+        HashMap<Object, ArrayList<Integer>> hashes = new HashMap<>();
+        int index = 0;
         while (!leftColumns[0].eof) {
-            HashMap<Object, ArrayList<Integer>> hashes = new HashMap<>();
-            int index = 0;
-                Object[] leftFields = leftColumns[leftFieldNo].column;
-                for (Object lf : leftFields) {
-                    if (hashes.get(lf) != null) {
-                        hashes.get(lf).add(index);
-                    } else {
-                        ArrayList<Integer> listIndices = new ArrayList<>();
-                        listIndices.add(index);
-                        hashes.put(lf, listIndices);
-                    }
-                    index++;
+            for (int i = 0; i < leftColumns.length; i++) {
+                for (int j = 0; j < leftColumns[0].column.length; j++) {
+                    wholeLeftColumns.get(i).add(leftColumns[i].column[j]);
                 }
-            while(!rightColumns[0].eof) {
-                Object[] rightFields = rightColumns[rightFieldNo].column;
-                index = 0;
-                for (Object rf : rightFields) {
-                    if (hashes.get(rf) != null) {
-                        for (int i = 0; i < leftColumns.length; i++) {
-                            for (int idx : hashes.get(rf)) {
-                                // first add tuples from left column
-                                result.get(i).add(leftColumns[i].column[idx]);
-                            }
-                        }
-                        for (int i = leftColumns.length; i < leftColumns.length+rightColumns.length-1; i++) {
-                            if (i != leftColumns.length+rightFieldNo) {
-                                // then tuples from right column
-                                result.get(i).add(rightColumns[i-leftColumns.length].column[index]);
-                            }
-                        }
-                    }
-                    index++;
+            }
+            Object[] leftFields = leftColumns[leftFieldNo].column;
+            for (Object lf : leftFields) {
+                if (hashes.get(lf) != null) {
+                    hashes.get(lf).add(index);
+                } else {
+                    ArrayList<Integer> listIndices = new ArrayList<>();
+                    listIndices.add(index);
+                    hashes.put(lf, listIndices);
                 }
-                rightColumns = rightChild.next();
+                index++;
             }
             leftColumns = leftChild.next();
         }
+
+        while(!rightColumns[0].eof) {
+            Object[] rightFields = rightColumns[rightFieldNo].column;
+            index = 0;
+            for (Object rf : rightFields) {
+                if (hashes.get(rf) != null) {
+                    for (int i = 0; i < wholeLeftColumns.size(); i++) {
+                        for (int idx : hashes.get(rf)) {
+                            // first add tuples from left column
+                            result.get(i).add(wholeLeftColumns.get(i).get(idx)  /* leftColumns[i].column[idx]*/);
+                        }
+                    }
+                    for (int i = wholeLeftColumns.size(); i < wholeLeftColumns.size()+rightColumns.length-1; i++) {
+                        if (i != wholeLeftColumns.size()+rightFieldNo) {
+                            // then tuples from right column
+                            result.get(i).add(rightColumns[i-wholeLeftColumns.size()].column[index]);
+                        }
+                    }
+                }
+                index++;
+            }
+            rightColumns = rightChild.next();
+        }
+
 
         // reconstruction of the whole columns
         for(int i = 0; i < result.size(); i++) {
             columns[i] = new DBColumn(result.get(i).toArray(), dtArray[i]);
         }
 
-		return columns;
-	}
+//        for(int i = 0; i < columns[0].column.length; i++) {
+//            for (int j = 0; j < columns.length; j++) {
+//                System.out.print(columns[j].column[i] +" ");
+//            }
+//            System.out.println();
+//        }
 
-	@Override
-	public void close() {
+        return columns;
+    }
+
+    @Override
+    public void close() {
         leftChild.close();
-        leftChild.close();
-	}
+        rightChild.close();
+    }
 }

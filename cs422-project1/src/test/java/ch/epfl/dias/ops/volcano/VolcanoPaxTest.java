@@ -376,22 +376,73 @@ public class VolcanoPaxTest {
         assertTrue(output == 3);
     }
 
-    @Test
-    public void query1() {
-        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItemBig);
-        ch.epfl.dias.ops.volcano.Select projectAggregate = new ch.epfl.dias.ops.volcano.Select(scan, BinaryOp.GE, 4, 15);
-        int[] projection = {1,4};
-        ch.epfl.dias.ops.volcano.Project project = new ch.epfl.dias.ops.volcano.Project(projectAggregate, projection);
-
-        project.open();
-        DBTuple result = project.next();
-        int index = 0;
-        while(!result.eof) {
-           // System.out.println(result.getFieldAsInt(0) + ", "+ result.getFieldAsDouble(1));
-            result = project.next();
-            index++;
-        }
-        System.out.println(index);
-        project.close();
-    }
+//    @Test
+//    public void query1() {
+//        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItemBig);
+//        ch.epfl.dias.ops.volcano.Select projectAggregate = new ch.epfl.dias.ops.volcano.Select(scan, BinaryOp.GE, 4, 15);
+//        int[] projection = {1,4};
+//        ch.epfl.dias.ops.volcano.Project project = new ch.epfl.dias.ops.volcano.Project(projectAggregate, projection);
+//
+//        project.open();
+//        DBTuple result = project.next();
+//        while(!result.eof) {
+//            result = project.next();
+//        }
+//        project.close();
+//    }
+//
+//    @Test
+//    public void query2() {
+//        ch.epfl.dias.ops.volcano.Scan scanLine = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItemBig);
+//        ch.epfl.dias.ops.volcano.Scan scanOrder = new ch.epfl.dias.ops.volcano.Scan(rowstoreOrderBig);
+//        int[] projection = {0};
+//        ch.epfl.dias.ops.volcano.Project projectLine = new ch.epfl.dias.ops.volcano.Project(scanLine, projection);
+//        ch.epfl.dias.ops.volcano.Project projectOrder = new ch.epfl.dias.ops.volcano.Project(scanOrder, projection);
+//        ch.epfl.dias.ops.volcano.HashJoin join = new ch.epfl.dias.ops.volcano.HashJoin(projectLine, projectOrder, 0, 0);
+//
+//        join.open();
+//
+//        DBTuple result = join.next();
+//        while(!result.eof) {
+//            result = join.next();
+//        }
+//        join.close();
+//    }
+//
+//    @Test
+//    public void query3() {
+//        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItemBig);
+//        ch.epfl.dias.ops.volcano.Select projectAggregate = new ch.epfl.dias.ops.volcano.Select(scan, BinaryOp.GE, 4, 15);
+//        int[] projection = {1,4};
+//        ch.epfl.dias.ops.volcano.Project project = new ch.epfl.dias.ops.volcano.Project(projectAggregate, projection);
+//        ch.epfl.dias.ops.volcano.ProjectAggregate pj = new ch.epfl.dias.ops.volcano.ProjectAggregate(project, Aggregate.COUNT, DataType.INT,  0);
+//
+//        pj.open();
+//        DBTuple result = pj.next();
+//        while(!result.eof) {
+//            result = pj.next();
+//        }
+//        project.close();
+//    }
+//
+//    @Test
+//    public void query4() {
+//        ch.epfl.dias.ops.volcano.Scan scanLine = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItemBig);
+//        ch.epfl.dias.ops.volcano.Scan scanOrder = new ch.epfl.dias.ops.volcano.Scan(rowstoreOrderBig);
+//        int[] projectionLine = {0, 7};
+//        int[] projectionOrder = {0};
+//        ch.epfl.dias.ops.volcano.Project projectLine = new ch.epfl.dias.ops.volcano.Project(scanLine, projectionLine);
+//        ch.epfl.dias.ops.volcano.Project projectOrder = new ch.epfl.dias.ops.volcano.Project(scanOrder, projectionOrder);
+//        ch.epfl.dias.ops.volcano.HashJoin join = new ch.epfl.dias.ops.volcano.HashJoin(projectLine, projectOrder, 0, 0);
+//        ch.epfl.dias.ops.volcano.ProjectAggregate pj = new ch.epfl.dias.ops.volcano.ProjectAggregate(join, Aggregate.MAX, DataType.DOUBLE, 1);
+//
+//        pj.open();
+//
+//        DBTuple result = pj.next();
+//        while(!result.eof) {
+//            //System.out.println(result.fields[0]);
+//            result = pj.next();
+//        }
+//        pj.close();
+//    }
 }

@@ -31,6 +31,9 @@ public class ProjectAggregate implements VolcanoOperator {
 	@Override
 	public DBTuple next() {
         DBTuple next = child.next();
+        if (next.eof) {
+            return new DBTuple();
+        }
         DBTuple returnTuple = new DBTuple();
         DataType[] dtArray = {dt};
         Object result[] = new Object[1];

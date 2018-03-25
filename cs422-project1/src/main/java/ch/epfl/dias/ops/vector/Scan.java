@@ -28,7 +28,7 @@ public class Scan implements VectorOperator {
             columnsToGet[i] = i;
         }
         columns = store.getColumns(columnsToGet);
-        remainingTuples = columns[0].column.length; // TODO revenir
+        remainingTuples = columns[0].column.length;
 	}
 
 	@Override
