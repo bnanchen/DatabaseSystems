@@ -1,13 +1,8 @@
 package ch.epfl.dias;
 
-import ch.epfl.dias.ops.Aggregate;
-import ch.epfl.dias.ops.BinaryOp;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.PAX.PAXStore;
-import ch.epfl.dias.store.column.ColumnStore;
-import ch.epfl.dias.store.column.DBColumn;
 import ch.epfl.dias.store.row.DBTuple;
-import ch.epfl.dias.store.row.RowStore;
 
 public class Main {
 

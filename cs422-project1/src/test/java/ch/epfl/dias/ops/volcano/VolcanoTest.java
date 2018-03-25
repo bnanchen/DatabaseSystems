@@ -11,8 +11,6 @@ import ch.epfl.dias.store.row.RowStore;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.EOFException;
-
 public class VolcanoTest {
 
     DataType[] orderSchema;
@@ -131,7 +129,7 @@ public class VolcanoTest {
 	}
 
 	@Test
-    public void testOrderSum() {
+    public void testOrderSumInt() {
         ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
         ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.SUM, DataType.INT, 0);
 
@@ -139,15 +137,26 @@ public class VolcanoTest {
 
         DBTuple result = agg.next();
         int output = result.getFieldAsInt(0);
-        System.out.println(output);
         assertTrue(output == 17);
+    }
+
+    @Test
+    public void testOrderSumDouble() {
+        ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.SUM, DataType.DOUBLE, 5);
+
+        agg.open();
+
+        DBTuple result = agg.next();
+        double output = result.getFieldAsDouble(0);
+        assertTrue(output == 454890.80);
     }
 
     @Test
     public void testOrderAvg() {
         // with double
         ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
-        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.AVG, DataType.DOUBLE, 0);
+        ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.AVG, DataType.DOUBLE, 5);
 
         // with int
         ch.epfl.dias.ops.volcano.Scan scan_ = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
@@ -160,8 +169,9 @@ public class VolcanoTest {
         DBTuple result_ = agg_.next();
         double output = result.getFieldAsDouble(0);
         int output_ = result_.getFieldAsInt(0);
-        assertTrue(output == 1.7);
+        assertTrue(output == 45489.08);
         assertTrue(output_ == 1);
+
     }
 
     @Test
@@ -194,14 +204,13 @@ public class VolcanoTest {
     public void testOrderMaxString() {
         // with string
         ch.epfl.dias.ops.volcano.Scan scanString = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
-        ch.epfl.dias.ops.volcano.ProjectAggregate aggString = new ch.epfl.dias.ops.volcano.ProjectAggregate(scanString, Aggregate.MIN, DataType.STRING, 15);
+        ch.epfl.dias.ops.volcano.ProjectAggregate aggString = new ch.epfl.dias.ops.volcano.ProjectAggregate(scanString, Aggregate.MAX, DataType.STRING, 15);
 
         aggString.open();
 
         DBTuple resultString = aggString.next();
         String outputString = resultString.getFieldAsString(0);
-        System.out.println(outputString);
-        assertTrue(outputString == "arefully slyly ex");
+        assertTrue(outputString.equals("ven requests. deposits breach a"));
     }
 
     @Test
@@ -241,7 +250,7 @@ public class VolcanoTest {
         DBTuple resultString = aggString.next();
         String outputString = resultString.getFieldAsString(0);
         System.out.println(outputString);
-        assertTrue(outputString == "arefully slyly ex");
+        assertTrue(outputString.equals("arefully slyly ex"));
     }
 
     @Test

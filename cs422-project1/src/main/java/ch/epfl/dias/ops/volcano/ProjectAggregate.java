@@ -2,25 +2,21 @@ package ch.epfl.dias.ops.volcano;
 
 import ch.epfl.dias.ops.Aggregate;
 import ch.epfl.dias.store.DataType;
-import ch.epfl.dias.store.Store;
 import ch.epfl.dias.store.row.DBTuple;
 
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 public class ProjectAggregate implements VolcanoOperator {
 
-	// TODO: Add required structures
 	private VolcanoOperator child;
 	private Aggregate agg;
 	private DataType dt;
 	private int fieldNo;
 
 	public ProjectAggregate(VolcanoOperator child, Aggregate agg, DataType dt, int fieldNo) {
-		// TODO: Implement
         this.child = child;
         this.agg = agg;
         this.dt = dt;
@@ -29,53 +25,67 @@ public class ProjectAggregate implements VolcanoOperator {
 
 	@Override
 	public void open() {
-		// TODO: Implement
         child.open();
 	}
 
 	@Override
 	public DBTuple next() {
-		// TODO: Implement
         DBTuple next = child.next();
         DBTuple returnTuple = new DBTuple();
         DataType[] dtArray = {dt};
         Object result[] = new Object[1];
+        DataType fieldType = next.types[fieldNo];
         switch (agg) {
             case AVG:
-                int accumulator = 0;
-                int index = 0;
-                while (!next.eof) {
-                    accumulator += next.getFieldAsInt(fieldNo);
-                    index += 1;
+                ArrayList avgArray = new ArrayList();
+                while(!next.eof) {
+                    avgArray.add(next.fields[fieldNo]);
                     next = child.next();
                 }
-                switch (dt) {
-                    case INT:
-                        result[0] = (int)accumulator/(int)index;
-                        break;
-                    case DOUBLE:
-                        result[0] = (double)accumulator/(double)index;
-                        break;
-                        default: throw new IllegalArgumentException();
+                if (fieldType == DataType.INT) {
+                    int[] avgInt = new int[avgArray.size()];
+                    for (int i = 0; i < avgInt.length; i++) {
+                        avgInt[i] = (int)avgArray.get(i);
+                    }
+                    int accumulator = IntStream.of(avgInt).sum();
+                    if (dt == DataType.INT) {
+                        result[0] = (int)accumulator/(int)avgInt.length;
+                    } else if (dt == DataType.DOUBLE) {
+                        result[0] = (double)accumulator/(double)avgInt.length;
+                    }
+                } else if (fieldType == DataType.DOUBLE) {
+                    double[] avgDouble = new double[avgArray.size()];
+                    for (int i = 0; i < avgDouble.length; i++) {
+                        avgDouble[i] = (double)avgArray.get(i);
+                    }
+                    double accumulator = DoubleStream.of(avgDouble).sum();
+
+                    if (dt == DataType.INT) {
+                        result[0] = (int)accumulator/(int)avgDouble.length;
+                    } else if (dt == DataType.DOUBLE) {
+                        result[0] = (double)accumulator/(double)avgDouble.length;
+                    }
                 }
                 returnTuple =  new DBTuple(result, dtArray);
                 break;
             case MAX: case MIN:
                 if (dt == DataType.STRING) {
-                    ArrayList<String> columns = new ArrayList<String>();
+                    ArrayList<String> columns = new ArrayList<>();
                     while(!next.eof) {
                         columns.add(next.getFieldAsString(fieldNo));
                         next = child.next();
                     }
                     for (int i = 0; i < columns.size(); i++) {
                         while(columns.get(i).charAt(0) == ' ') {
-                            columns.set(i, removeCharAt(columns.get(i), 0));
+                            columns.set(i, removeCharAt(columns.get(i)));
                         }
                     }
-                    Collections.sort(columns); // TODO j'étais là
-                    System.out.println("yououou "+ columns.get(0).charAt(0));
-                    System.out.println(columns);
-                    result[0] = columns.get(0);
+                    if (agg == Aggregate.MIN) {
+                        result[0] = Collections.min(columns);
+                    } else {
+                        result[0] = Collections.max(columns);
+                    }
+
                 }
                 else {
                     ArrayList columns = new ArrayList<>();
@@ -92,20 +102,24 @@ public class ProjectAggregate implements VolcanoOperator {
                 returnTuple = new DBTuple(result, dtArray);
                 break;
             case SUM:
-                int sumInt = 0;
-                double sumDouble = 0.0;
+                ArrayList sumInt = new ArrayList();
                 while(!next.eof) {
-                    if (dt == DataType.INT) {
-                        sumInt += next.getFieldAsInt(fieldNo);
-                    } else {
-                        sumDouble += next.getFieldAsDouble(fieldNo);
-                    }
+                        sumInt.add(next.fields[fieldNo]);
                     next = child.next();
                 }
+
                 if (dt == DataType.INT) {
-                    result[0] = sumInt;
+                    int[] sumIntArray = new int[sumInt.size()];
+                    for (int i = 0; i < sumInt.size(); i++) {
+                        sumIntArray[i] = (int)sumInt.get(i);
+                    }
+                    result[0] = IntStream.of(sumIntArray).sum();
                 } else {
-                    result[0] = sumDouble;
+                    double[] sumDoubleArray = new double[sumInt.size()];
+                    for (int i = 0; i < sumInt.size(); i++) {
+                        sumDoubleArray[i] = (double)sumInt.get(i);
+                    }
+                    result[0] = DoubleStream.of(sumDoubleArray).sum();
                 }
                 returnTuple = new DBTuple(result, dtArray);
                 break;
@@ -122,13 +136,12 @@ public class ProjectAggregate implements VolcanoOperator {
         return returnTuple;
 	}
 
-    private static String removeCharAt(String s, int pos) {
-        return s.substring(0, pos) + s.substring(pos + 1);
+    private static String removeCharAt(String s) {
+        return s.substring(0, 0) + s.substring(1);
     }
 
 	@Override
 	public void close() {
-		// TODO: Implement
         child.close();
 	}
 

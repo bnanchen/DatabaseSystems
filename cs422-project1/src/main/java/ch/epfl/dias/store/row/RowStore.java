@@ -10,11 +10,8 @@ import java.util.List;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.Store;
 
-import javax.xml.crypto.Data;
-
 public class RowStore extends Store {
     
-    // TODO: Add required structures
     private DBTuple table[];
     private Path path;
     private DataType[] schema;
@@ -22,7 +19,6 @@ public class RowStore extends Store {
     private List<String> lines;
     
     public RowStore(DataType[] schema, String filename, String delimiter) {
-        // TODO: Implement
         this.path = Paths.get(filename);
         this.schema = schema;
         this.delimiter = delimiter;
@@ -30,7 +26,6 @@ public class RowStore extends Store {
     
     @Override
     public void load() {
-        // TODO: Implement
         try {
             this.lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -40,7 +35,6 @@ public class RowStore extends Store {
         for (int i = 0; i < lines.size(); i++) {
             String arr[] = lines.get(i).split(delimiter);
             table[i] = new DBTuple(castFill(arr), schema);
-            //System.out.println(table[i].getFieldAsInt(0));
         }
         table[lines.size()] = new DBTuple();
     }
@@ -71,7 +65,6 @@ public class RowStore extends Store {
     
     @Override
     public DBTuple getRow(int rownumber) {
-        // TODO: Implement
         return table[rownumber];
     }
 }

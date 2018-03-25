@@ -1,26 +1,19 @@
 package ch.epfl.dias.ops.block;
 
-import ch.epfl.dias.ops.BinaryOp;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.column.DBColumn;
-import ch.epfl.dias.store.row.DBTuple;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 public class Join implements BlockOperator {
 
-	// TODO: Add required structures
     private BlockOperator leftChild;
     private BlockOperator rightChild;
     private int leftFieldNo;
     private int rightFieldNo;
 
 	public Join(BlockOperator leftChild, BlockOperator rightChild, int leftFieldNo, int rightFieldNo) {
-		// TODO: Implement
         this.leftChild = leftChild;
         this.rightChild = rightChild;
         this.leftFieldNo = leftFieldNo;
@@ -28,7 +21,6 @@ public class Join implements BlockOperator {
 	}
 
 	public DBColumn[] execute() {
-		// TODO: Implement
         HashMap<Object, ArrayList<Integer>> hashes = new HashMap<>();
         DBColumn[] leftColumn = leftChild.execute();
         Object[] leftFields = leftColumn[leftFieldNo].column;

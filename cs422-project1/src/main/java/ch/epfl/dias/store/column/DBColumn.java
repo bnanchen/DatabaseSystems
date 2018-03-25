@@ -1,13 +1,9 @@
 package ch.epfl.dias.store.column;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import ch.epfl.dias.store.DataType;
 
 public class DBColumn {
 
-    // TODO: Implement
     public Object[] column;
     public DataType type;
     public boolean eof;
@@ -24,7 +20,6 @@ public class DBColumn {
     }
 
     public Integer[] getAsInteger() {
-        // TODO: Implement
         Integer columnInt[] = new Integer[column.length];
         for (int i = 0; i < column.length; i++) {
             columnInt[i] = (Integer)column[i];

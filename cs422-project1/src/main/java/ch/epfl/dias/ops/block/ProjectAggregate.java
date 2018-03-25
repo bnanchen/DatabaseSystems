@@ -4,25 +4,20 @@ import ch.epfl.dias.ops.Aggregate;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.column.DBColumn;
 
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class ProjectAggregate implements BlockOperator {
 
-	// TODO: Add required structures
     private BlockOperator child;
     private Aggregate agg;
     private DataType dt;
     private int fieldNo;
 	
 	public ProjectAggregate(BlockOperator child, Aggregate agg, DataType dt, int fieldNo) {
-		// TODO: Implement
         this.child = child;
         this.agg = agg;
         this.dt = dt;
@@ -31,75 +26,109 @@ public class ProjectAggregate implements BlockOperator {
 
 	@Override
 	public DBColumn[] execute() {
-		// TODO: Implement
         DBColumn[] columns = child.execute();
         Object result[] = new Object[1];
 
         switch (agg) {
             case AVG:
-                Integer[] integerColumn = columns[fieldNo].getAsInteger();
-                int[] intColumn = new int[integerColumn.length];
-                for (int i = 0; i < integerColumn.length; i++) {
-                    intColumn[i] = integerColumn[i];
-                }
-                int sum = IntStream.of(intColumn).sum();
-                switch (dt) {
-                    case INT:
-                        result[0] = sum / integerColumn.length;
-                        DBColumn[] resultColInt = {new DBColumn(result, dt)};
-                        return resultColInt;
-                    case DOUBLE:
+                if (columns[fieldNo].type == DataType.INT) {
+                    Integer[] integerColumn = columns[fieldNo].getAsInteger();
+                    int[] intColumn = new int[integerColumn.length];
+                    for (int i = 0; i < integerColumn.length; i++) {
+                        intColumn[i] = integerColumn[i];
+                    }
+                    int sum = IntStream.of(intColumn).sum();
+                    if (dt == DataType.INT) {
+                        result[0] = (int)sum / (int)integerColumn.length;
+                    } else if (dt == DataType.DOUBLE) {
                         result[0] = (double)sum / (double)integerColumn.length;
-                        DBColumn[] resultColDouble = {new DBColumn(result, dt)};
-                        return resultColDouble;
-                    default: throw new IllegalArgumentException();
+                    }
+
+                } else if (columns[fieldNo].type == DataType.DOUBLE) {
+                    Double[] doubleColumn = columns[fieldNo].getAsDouble();
+                    double[] coolDoubleColumn = new double[doubleColumn.length];
+                    for (int i = 0; i < doubleColumn.length; i++) {
+                        coolDoubleColumn[i] = doubleColumn[i];
+                    }
+                    double sum = DoubleStream.of(coolDoubleColumn).sum();
+                    if (dt == DataType.INT) {
+                        result[0] = (int)sum / (int)doubleColumn.length;
+                    } else if (dt == DataType.DOUBLE) {
+                        result[0] = (double)sum / (double)doubleColumn.length;
+                    }
                 }
+                return new DBColumn[]{new DBColumn(result, dt)};
             case MAX: case MIN:
-                if (dt == DataType.INT) {
-                    Integer[] integerColumnMax = columns[fieldNo].getAsInteger();
-                    int[] intColumnMax = new int[integerColumnMax.length];
-                    for (int i = 0; i < integerColumnMax.length; i++) {
-                        intColumnMax[i] = integerColumnMax[i];
+                switch (dt) {
+                    case INT: {
+                        Integer[] integerColumnMax = columns[fieldNo].getAsInteger();
+                        ArrayList intColumnMax = new ArrayList();
+                        Collections.addAll(intColumnMax, integerColumnMax);
+
+                        if (agg == Aggregate.MAX) {
+                            System.out.println();
+                            result[0] = Collections.max(intColumnMax);
+                        } else {
+                            result[0] = Collections.min(intColumnMax);
+                        }
+                        break;
                     }
-                    if (agg == Aggregate.MAX) {
-                        result[0] = IntStream.of(intColumnMax).max();
+                    case DOUBLE: {
+                        Double[] integerColumnMax = columns[fieldNo].getAsDouble();
+                        ArrayList doubleColumnMax = new ArrayList();
+                        Collections.addAll(doubleColumnMax, integerColumnMax);
+
+                        if (agg == Aggregate.MAX) {
+                            System.out.println();
+                            result[0] = Collections.max(doubleColumnMax);
+                        } else {
+                            result[0] = Collections.min(doubleColumnMax);
+                        }
+                        break;
                     }
-                    result[0] = IntStream.of(intColumnMax).min();
-                } else if (dt == DataType.DOUBLE) {
-                    Double[] doubleColumnMax = columns[fieldNo].getAsDouble();
-                    double[] cooldoubleColumnMax = new double[doubleColumnMax.length];
-                    for (int i = 0; i < doubleColumnMax.length; i++) {
-                        cooldoubleColumnMax[i] = doubleColumnMax[i];
-                    }
-                    if (agg == Aggregate.MAX) {
-                        result[0] = DoubleStream.of(cooldoubleColumnMax).max();
-                    }
-                    result[0] = DoubleStream.of(cooldoubleColumnMax).min();
-                } else if (dt == DataType.STRING) {
-                    String[] stringColumn = columns[fieldNo].getAsString();
-                    List<String> sorted = Arrays.asList(stringColumn);
-                    Collections.sort(sorted);
-                    if (agg == Aggregate.MAX) {
-                        result[0] = sorted.get(sorted.size());
-                    }
-                    result[0] = sorted.get(0);
+                    case STRING:
+                        String[] stringColumn = columns[fieldNo].getAsString();
+                        ArrayList<String> stringColumnMax = new ArrayList<>();
+                        Collections.addAll(stringColumnMax, stringColumn);
+                        for (int i = 0; i < stringColumnMax.size(); i++) {
+                            while (stringColumnMax.get(i).charAt(0) == ' ') {
+                                stringColumnMax.set(i, removeCharAt(stringColumnMax.get(i)));
+                            }
+                        }
+                        Collections.sort(stringColumnMax);
+                        if (agg == Aggregate.MAX) {
+                            result[0] = stringColumnMax.get(stringColumnMax.size() - 1);
+                        } else {
+                            result[0] = stringColumnMax.get(0);
+                        }
+                        break;
                 }
-                DBColumn[] resultMinMax = {new DBColumn(result, dt)};
-                return resultMinMax;
+                return new DBColumn[]{new DBColumn(result, dt)};
             case SUM:
-                Double[] doubleColumn = columns[fieldNo].getAsDouble();
-                double[] coolDoubleColumn = new double[doubleColumn.length];
-                for (int i = 0; i < doubleColumn.length; i++) {
-                    coolDoubleColumn[i] = doubleColumn[i];
+                if (dt == DataType.DOUBLE) {
+                    Double[] doubleColumn = columns[fieldNo].getAsDouble();
+                    double[] coolDoubleColumn = new double[doubleColumn.length];
+                    for (int i = 0; i < doubleColumn.length; i++) {
+                        coolDoubleColumn[i] = doubleColumn[i];
+                    }
+                    result[0] = DoubleStream.of(coolDoubleColumn).sum();
+                } else if (dt == DataType.INT) {
+                    Integer[] integerColumnSum = columns[fieldNo].getAsInteger();
+                    int[] intColumnSum = new int[integerColumnSum.length];
+                    for (int i = 0; i < integerColumnSum.length; i++) {
+                        intColumnSum[i] = integerColumnSum[i];
+                    }
+                    result[0] = IntStream.of(intColumnSum).sum();
                 }
-                result[0] = DoubleStream.of(coolDoubleColumn).sum();
-                DBColumn[] resultSum = {new DBColumn(result, dt)};
-                return resultSum;
+                return new DBColumn[]{new DBColumn(result, dt)};
             case COUNT:
                 result[0] = (int)(long)Stream.of(columns[fieldNo].column).count();
-                DBColumn[] resultCount = {new DBColumn(result, dt)};
-                return resultCount;
+                return new DBColumn[]{new DBColumn(result, dt)};
         }
 		return null;
 	}
+
+    private static String removeCharAt(String s) {
+        return s.substring(0, 0) + s.substring(1);
+    }
 }

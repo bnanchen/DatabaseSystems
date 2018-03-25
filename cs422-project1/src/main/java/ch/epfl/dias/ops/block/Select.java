@@ -24,12 +24,10 @@ public class Select implements BlockOperator {
 
 	@Override
 	public DBColumn[] execute() {
-		// TODO: Implement
         DBColumn[] columns = child.execute();
         ArrayList<ArrayList<Object>> tempResult = new ArrayList<>();
-        for (int i = 0; i < columns.length; i++) {
-            ArrayList<Object> temp = new ArrayList<>();
-            temp.addAll(Arrays.asList(columns[i].column));
+        for (DBColumn column1 : columns) {
+            ArrayList<Object> temp = new ArrayList<>(Arrays.asList(column1.column));
             tempResult.add(temp);
         }
         Integer[] column = columns[fieldNo].getAsInteger();

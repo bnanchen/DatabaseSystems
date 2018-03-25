@@ -1,18 +1,13 @@
 package ch.epfl.dias.ops.volcano;
 
-import ch.epfl.dias.ops.BinaryOp;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.row.DBTuple;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 public class HashJoin implements VolcanoOperator {
 
-	// TODO: Add required structures
 	private VolcanoOperator leftChild;
 	private VolcanoOperator rightChild;
 	private int leftFieldNo;
@@ -22,7 +17,6 @@ public class HashJoin implements VolcanoOperator {
 	private int iter = 0;
 
 	public HashJoin(VolcanoOperator leftChild, VolcanoOperator rightChild, int leftFieldNo, int rightFieldNo) {
-		// TODO: Implement
         this.leftChild = leftChild;
         this.rightChild = rightChild;
         this.leftFieldNo = leftFieldNo;
@@ -31,7 +25,6 @@ public class HashJoin implements VolcanoOperator {
 
 	@Override
 	public void open() {
-		// TODO: Implement
         leftChild.open();
         rightChild.open();
         DBTuple next = leftChild.next();
@@ -82,7 +75,6 @@ public class HashJoin implements VolcanoOperator {
 
 	@Override
 	public void close() {
-		// TODO: Implement
         leftChild.close();
         rightChild.close();
 	}

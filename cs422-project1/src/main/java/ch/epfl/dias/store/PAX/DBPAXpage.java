@@ -1,12 +1,10 @@
 package ch.epfl.dias.store.PAX;
 
 import ch.epfl.dias.store.DataType;
-import ch.epfl.dias.store.column.DBColumn;
 import ch.epfl.dias.store.row.DBTuple;
 
 public class DBPAXpage {
 
-	// TODO: Implement
     public DBTuple[] minipages;
     public DataType[] types;
     public int minipagenumb;
@@ -24,9 +22,5 @@ public class DBPAXpage {
         this.minipages = new DBTuple[]{emptyTuple};
         this.minipagenumb = 1;
         this.eof = true;
-    }
-
-    public Integer getFieldAsInt(int fieldNo) {
-        return 0;
     }
 }

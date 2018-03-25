@@ -4,21 +4,17 @@ import ch.epfl.dias.store.Store;
 import ch.epfl.dias.store.column.ColumnStore;
 import ch.epfl.dias.store.column.DBColumn;
 
-import javax.sound.midi.SysexMessage;
 import java.util.ArrayList;
 
 public class Scan implements VectorOperator {
 
-	// TODO: Add required structures
 	private ColumnStore store;
 	private int vectorSize;
-	private int[] columnsToGet;
 	private DBColumn[] columns;
 	private int vectorNumber;
 	private int remainingTuples;
 
 	public Scan(Store store, int vectorSize) {
-		// TODO: Implement
         this.store = (ColumnStore) store;
         this.vectorSize = vectorSize;
         this.vectorNumber = 0;
@@ -26,9 +22,8 @@ public class Scan implements VectorOperator {
 	
 	@Override
 	public void open() {
-		// TODO: Implement
         store.load();
-        columnsToGet = new int[store.getNumberOfColumns()];
+        int[] columnsToGet = new int[store.getNumberOfColumns()];
         for (int i = 0; i < store.getNumberOfColumns(); i++) {
             columnsToGet[i] = i;
         }
@@ -38,10 +33,8 @@ public class Scan implements VectorOperator {
 
 	@Override
 	public DBColumn[] next() {
-		// TODO: Implement
         if (remainingTuples == 0) {
-            DBColumn[] empty = {new DBColumn()};
-            return empty;
+            return new DBColumn[]{new DBColumn()};
         }
 
         ArrayList<ArrayList<Object>> tempResult = new ArrayList<>();
@@ -59,14 +52,6 @@ public class Scan implements VectorOperator {
             currentVectorSize++;
             remainingTuples--;
         }
-
-//        for (int v = 0; v < vectorSize; v++) {
-//            for (int col = 0; col < columns.length; col++) {
-//                if (vectorSize*vectorNumber+v < columns[0].column.length) {
-//                    tempResult.get(col).add(columns[col].column[vectorSize*vectorNumber+v]);
-//                }
-//            }
-//        }
         vectorNumber++;
 
         DBColumn[] result = new DBColumn[columns.length];
@@ -74,16 +59,11 @@ public class Scan implements VectorOperator {
         for (int i = 0; i < tempResult.size(); i++) {
             result[i] = new DBColumn(tempResult.get(i).toArray(), columns[i].type);
         }
-//        System.out.println("------");
-//        for (int i = 0; i < result[0].column.length; i++) {
-//            System.out.println(result[0].column[i]);
-//        }
 		return result;
 	}
 
 	@Override
 	public void close() {
-		// TODO: Implement
         vectorSize = 0;
 	}
 }

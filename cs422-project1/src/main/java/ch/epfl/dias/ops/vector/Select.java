@@ -4,7 +4,6 @@ import ch.epfl.dias.ops.BinaryOp;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.column.DBColumn;
 
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -39,28 +38,25 @@ public class Select implements VectorOperator {
             dtArray[i] = columns[i].type;
         }
         if (columns[0].eof) {
-            DBColumn[] empty = {new DBColumn()};
-            return empty;
+            return new DBColumn[]{new DBColumn()};
         }
 
         ArrayList<ArrayList<Object>> resultList = new ArrayList<>();
-        for (int i = 0; i < columns.length; i++) {
+        for (DBColumn column1 : columns) {
             ArrayList<Object> temp = new ArrayList<>();
             resultList.add(temp);
         }
 
         while (!columns[0].eof) {
             ArrayList<ArrayList<Object>> tempResult = new ArrayList<>();
-            for (int i = 0; i < columns.length; i++) {
-                ArrayList<Object> temp = new ArrayList<>();
-                temp.addAll(Arrays.asList(columns[i].column));
+            for (DBColumn column1 : columns) {
+                ArrayList<Object> temp = new ArrayList<>(Arrays.asList(column1.column));
                 tempResult.add(temp);
             }
             Integer[] column = columns[fieldNo].getAsInteger();
             boolean testResult;
             int index = 0;
             for (int compareTo : column) {
-               // System.out.println(compareTo);
                 switch (op) {
                     case GT: testResult = compareTo > value;
                         break;
@@ -88,7 +84,6 @@ public class Select implements VectorOperator {
                 for (int j = 0; j < tempResult.get(0).size(); j++) {
                     resultList.get(i).add(tempResult.get(i).get(j));
                 }
-                //resultList.get(i).add(tempResult.get(i));
             }
             columns = child.next();
         }
@@ -96,19 +91,13 @@ public class Select implements VectorOperator {
         DBColumn[] result = new DBColumn[resultList.size()];
 
         for (int i = 0; i < resultList.size(); i++) {
-           // System.out.println("size "+ resultList.get(i).size());
             result[i] = new DBColumn(resultList.get(i).toArray(), dtArray[i]);
         }
-//        System.out.println("------");
-//        for (int i = 0; i < result[0].column.length; i++) {
-//            System.out.println(result[0].column[i]);
-//        }
         return result;
 	}
 
 	@Override
 	public void close() {
-		// TODO: Implement
         child.close();
 	}
 }

@@ -23,7 +23,7 @@ public abstract class Store {
 	 */
 	public DBTuple getRow(int rownumber) {
 		return null;
-	};
+	}
 
 	/**
 	 * Method to access columns available only for column store
@@ -34,5 +34,5 @@ public abstract class Store {
 	 */
 	public DBColumn[] getColumns(int[] columnsToGet) {
 		return null;
-	};
+	}
 }

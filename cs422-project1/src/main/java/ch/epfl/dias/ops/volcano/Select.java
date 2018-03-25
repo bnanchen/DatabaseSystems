@@ -5,14 +5,12 @@ import ch.epfl.dias.store.row.DBTuple;
 
 public class Select implements VolcanoOperator {
 
-    // TODO: Add required structures
     private VolcanoOperator child;
     private BinaryOp op;
     private int fieldNo;
     private int value;
 
     public Select(VolcanoOperator child, BinaryOp op, int fieldNo, int value) {
-        // TODO: Implement
         this.child = child;
         this.op = op;
         this.fieldNo = fieldNo;
@@ -21,13 +19,11 @@ public class Select implements VolcanoOperator {
 
     @Override
     public void open() {
-        // TODO: Implement
         child.open();
     }
 
     @Override
     public DBTuple next() {
-        // TODO: Implement
         boolean testResult = false;
         DBTuple next = child.next();
         while (!testResult && !next.eof) {
@@ -58,7 +54,6 @@ public class Select implements VolcanoOperator {
 
     @Override
     public void close() {
-        // TODO: Implement
         child.close();
     }
 }
