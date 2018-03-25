@@ -23,7 +23,7 @@ public class VectorTest {
     ColumnStore columnstoreOrderBig;
     ColumnStore columnstoreLineItemBig;
 
-    int vectorSize = 3;
+    int vectorSize = 100;
 
     @Before
     public void init() {
@@ -120,7 +120,7 @@ public class VectorTest {
 
         DBColumn[] result = agg.next();
         double output = result[0].getAsDouble()[0];
-        assertTrue(output == 454890.79999999993);
+        assertTrue(output == 454890.80);
     }
 
     @Test
@@ -142,7 +142,8 @@ public class VectorTest {
         double output = result[0].getAsDouble()[0];
         System.out.println(result_[0].getAsInteger()[0]);
         int output_ = result_[0].getAsInteger()[0];
-        assertTrue(output == 45489.079999999993);
+        System.out.println(output);
+        assertTrue(output == 45489.08);
         assertTrue(output_ == 1);
     }
 
@@ -390,14 +391,12 @@ public class VectorTest {
 
         pj.open();
         DBColumn[] result = pj.next();
-//        int index = 0;
         while(!result[0].eof) {
             for (int i = 0; i < result[0].column.length; i++) {
             }
 
             result = pj.next();
         }
-//        System.out.println(index);
         pj.close();
     }
 

@@ -210,18 +210,22 @@ public class ProjectAggregate implements VectorOperator {
                 if (dt == DataType.INT) {
                     while (!columns[0].eof) {
                         Integer[] integerColumn = columns[fieldNo].getAsInteger();
+                        int[] intColumn = new int[integerColumn.length];
                         for (int i = 0; i < integerColumn.length; i++) {
-                            sum += integerColumn[i].intValue();
+                            intColumn[i] = integerColumn[i];
                         }
+                        sum += IntStream.of(intColumn).sum();
                         columns = child.next();
                     }
 
                 } else if (dt == DataType.DOUBLE) {
                     while (!columns[0].eof) {
                         Double[] doubleColumn = columns[fieldNo].getAsDouble();
+                        double[] coolDoubleColumn = new double[doubleColumn.length];
                         for (int i = 0; i < doubleColumn.length; i++) {
-                            sum += doubleColumn[i].doubleValue();
+                            coolDoubleColumn[i] = doubleColumn[i];
                         }
+                        sum += DoubleStream.of(coolDoubleColumn).sum();
                         columns = child.next();
                     }
 
