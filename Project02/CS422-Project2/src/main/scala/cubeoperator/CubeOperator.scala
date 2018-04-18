@@ -23,6 +23,7 @@ class CubeOperator(reducers: Int) {
     val indexAgg = schema.indexOf(aggAttribute)
 
     //TODO Task 1
+    
 
     null
   }
