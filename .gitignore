@@ -25,3 +25,8 @@ input/
 
 .idea
 *.iml
+
+target/
+*.class
+lineorder_small.tbl
+lineorder_big.tbl
