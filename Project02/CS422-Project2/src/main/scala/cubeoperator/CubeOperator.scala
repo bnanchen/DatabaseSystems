@@ -22,16 +22,46 @@ class CubeOperator(reducers: Int) {
     val index = groupingAttributes.map(x => schema.indexOf(x))
     val indexAgg = schema.indexOf(aggAttribute)
 
-    //TODO Task 1
-    
+    // println("Indices: "+ index) 4,5,16
 
-    null
+    val tempRdd: RDD[List[String]] = rdd.map(_.toSeq.toList.map(_.toString()))
+    val mappedRdd: RDD[(String, Double)] = map(tempRdd, agg, index, indexAgg)
+    val finalRdd: RDD[(String, Double)] = reduce(mappedRdd, agg)
+
+    //TODO Task 1
+    finalRdd.foreach(println(_))
+    println("AUREVOIR!")
+    return finalRdd
   }
 
   def cube_naive(dataset: Dataset, groupingAttributes: List[String], aggAttribute: String, agg: String): RDD[(String, Double)] = {
 
     //TODO naive algorithm for cube computation
     null
+  }
+
+  def map(rdd: RDD[List[String]], agg: String, index: List[Int], indexAgg: Int): RDD[(String, Double)] = {
+    val rddKeyValue: RDD[(String, List[String])] = rdd.map{x: List[String] => (index.flatMap(x(_)).foldLeft(""){(acc, a) => acc + a}, x)}
+    val returnedRDD: RDD[(String, Double)] = {
+      agg match {
+        case "COUNT" => rddKeyValue.map{kv => (kv._1, 1)}
+        case "SUM" | "AVG" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)} // TODO correct?!?
+        case "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)}
+      }
+    }
+    returnedRDD.foreach(println(_))
+    returnedRDD
+  }
+
+  def reduce(rdd: RDD[(String, Double)], agg: String): RDD[(String, Double)] = {
+    // TODO can I do that?
+    val returnedRDD = rdd.groupByKey().mapValues(values => agg match {
+      case "COUNT" | "SUM" => values.sum
+      case "AVG" => values.sum / values.size
+      case "MIN" => values.min
+      case "MAX" => values.max
+    })
+    returnedRDD
   }
 
 }

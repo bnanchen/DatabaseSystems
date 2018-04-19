@@ -11,10 +11,10 @@ object Main {
 
     val reducers = 10
 
-    val inputFile= "/project2/lineorder_small.tbl"
+    val inputFile = "src/test/resources/lineorder_small.tbl"
     val output = "output"
 
-    val sparkConf = new SparkConf().setAppName("CS422-Project2")//.setMaster("local[16]")
+    val sparkConf = new SparkConf().setAppName("CS422-Project2").setMaster("local[16]") // TODO .setMaster() was commented
     val ctx = new SparkContext(sparkConf)
     val sqlContext = new org.apache.spark.sql.SQLContext(ctx)
 
@@ -35,7 +35,7 @@ object Main {
 
     var groupingList = List("lo_suppkey","lo_shipmode","lo_orderdate")
 
-    val res = cb.cube(dataset, groupingList, "lo_supplycost", "SUM")
+    val res = cb.cube(dataset, groupingList, "lo_supplycost", "COUNT")
 
     /*
        The above call corresponds to the query:
