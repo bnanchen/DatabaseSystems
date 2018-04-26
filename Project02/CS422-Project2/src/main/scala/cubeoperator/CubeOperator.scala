@@ -25,12 +25,10 @@ class CubeOperator(reducers: Int) {
     // println("Indices: "+ index) 4,5,16
 
     val tempRdd: RDD[List[String]] = rdd.map(_.toSeq.toList.map(_.toString()))
-    val mappedRdd: RDD[(String, Double)] = map(tempRdd, agg, index, indexAgg)
+    val mappedRdd: RDD[(List[String], Double)] = map(tempRdd, agg, index, indexAgg)
     val finalRdd: RDD[(String, Double)] = reduce(mappedRdd, agg)
 
     //TODO Task 1
-    finalRdd.foreach(println(_))
-    println("AUREVOIR!")
     return finalRdd
   }
 
@@ -40,28 +38,46 @@ class CubeOperator(reducers: Int) {
     null
   }
 
-  def map(rdd: RDD[List[String]], agg: String, index: List[Int], indexAgg: Int): RDD[(String, Double)] = {
-    val rddKeyValue: RDD[(String, List[String])] = rdd.map{x: List[String] => (index.flatMap(x(_)).foldLeft(""){(acc, a) => acc + a}, x)}
-    val returnedRDD: RDD[(String, Double)] = {
+  def map(rdd: RDD[List[String]], agg: String, index: List[Int], indexAgg: Int): RDD[(List[String], Double)] = {
+    //val rddKeyValue: RDD[(String, List[String])] = rdd.map{x: List[String] => (index.flatMap(x(_)).foldLeft(""){(acc, a) => acc + a}, x)} // key is a String
+    val rddKeyValue: RDD[(List[String], List[String])] = rdd.map{x: List[String] => (index.map(x(_)).foldLeft(List[String]()){(acc, a) => acc.:+(a)}, x)} // the key now is a List[String]
+    val returnedRDD: RDD[(List[String], Double)] = {
       agg match {
         case "COUNT" => rddKeyValue.map{kv => (kv._1, 1)}
-        case "SUM" | "AVG" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)} // TODO correct?!?
-        case "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)}
+        case "SUM" | "AVG" | "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)} // TODO correct?!?
+        //case "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)}
       }
     }
-    returnedRDD.foreach(println(_))
     returnedRDD
   }
 
-  def reduce(rdd: RDD[(String, Double)], agg: String): RDD[(String, Double)] = {
-    // TODO can I do that?
-    val returnedRDD = rdd.groupByKey().mapValues(values => agg match {
+  def reduce(rdd: RDD[(List[String], Double)], agg: String): RDD[(String, Double)] = {
+    val returnedRDD: RDD[(List[String], Double)] = rdd.groupByKey(reducers).mapValues(values => agg match { // TODO reducers argument useful?!
       case "COUNT" | "SUM" => values.sum
       case "AVG" => values.sum / values.size
       case "MIN" => values.min
       case "MAX" => values.max
-    })
-    returnedRDD
+    }).cache() // TODO useful?
+
+    val partialKeyRDD = returnedRDD.keys.flatMap(k => k.toSet.subsets.map(_.toList)).sortBy(_.size, ascending=false)
+    val mapReturnedRDD = returnedRDD.collectAsMap()
+    // TODO make something with with an accumulator
+
+    val finalRDD = returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
+    finalRDD.foreach(println(_))
+
+//    val finalRDD = partialKeyRDD.flatMap{l => returnedRDD.filter{el => el._1.containsSlice(l)}.map(_._2)}
+//    val l3RDD = partialKeyRDD.filter{f => f.size == 3}.distinct()
+//    val l2RDD = partialKeyRDD.filter{f => f.size == 2}.distinct()
+//    val l1RDD = partialKeyRDD.filter{f => f.size == 1}.distinct()
+//    val l0RDD = partialKeyRDD.filter{f => f.isEmpty}.distinct()
+//    // TODO j'ai l'impression d'avoir une bonne idée
+//    val temp3RDD: RDD[(List[String], Double)] = l3RDD.map{k => (k, returnedRDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
+//    val temp2RDD = temp3RDD ++ l2RDD.map{k => (k, temp3RDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
+//    val temp1RDD = temp2RDD ++ l1RDD.map{k => (k, temp2RDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
+//    val finalRDD = temp1RDD ++ l0RDD.map{k => (k, temp1RDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
+
+    returnedRDD.map{kv => (kv._1.mkString(""), kv._2)}
   }
 
 }
