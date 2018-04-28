@@ -23,18 +23,17 @@ class CubeOperator(reducers: Int) {
     val indexAgg = schema.indexOf(aggAttribute)
 
     // println("Indices: "+ index) 4,5,16
-
-    val tempRdd: RDD[List[String]] = rdd.map(_.toSeq.toList.map(_.toString()))
-    val mappedRdd: RDD[(List[String], Double)] = map(tempRdd, agg, index, indexAgg)
-    val finalRdd: RDD[(String, Double)] = reduce(mappedRdd, agg)
-
+    val tempRDD: RDD[List[String]] = rdd.map(_.toSeq.toList.map(_.toString()))
+    val mappedRDD: RDD[(List[String], Double)] = map(tempRDD, agg, index, indexAgg)
+    val finalRDD: RDD[(String, Double)] = reduce(mappedRDD, agg)
     //TODO Task 1
-    return finalRdd
+    finalRDD
   }
 
   def cube_naive(dataset: Dataset, groupingAttributes: List[String], aggAttribute: String, agg: String): RDD[(String, Double)] = {
-
     //TODO naive algorithm for cube computation
+
+
     null
   }
 
@@ -45,7 +44,6 @@ class CubeOperator(reducers: Int) {
       agg match {
         case "COUNT" => rddKeyValue.map{kv => (kv._1, 1)}
         case "SUM" | "AVG" | "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)} // TODO correct?!?
-        //case "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)}
       }
     }
     returnedRDD
@@ -64,20 +62,8 @@ class CubeOperator(reducers: Int) {
     // TODO make something with with an accumulator
 
     val finalRDD = returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
-    finalRDD.foreach(println(_))
 
-//    val finalRDD = partialKeyRDD.flatMap{l => returnedRDD.filter{el => el._1.containsSlice(l)}.map(_._2)}
-//    val l3RDD = partialKeyRDD.filter{f => f.size == 3}.distinct()
-//    val l2RDD = partialKeyRDD.filter{f => f.size == 2}.distinct()
-//    val l1RDD = partialKeyRDD.filter{f => f.size == 1}.distinct()
-//    val l0RDD = partialKeyRDD.filter{f => f.isEmpty}.distinct()
-//    // TODO j'ai l'impression d'avoir une bonne idée
-//    val temp3RDD: RDD[(List[String], Double)] = l3RDD.map{k => (k, returnedRDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
-//    val temp2RDD = temp3RDD ++ l2RDD.map{k => (k, temp3RDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
-//    val temp1RDD = temp2RDD ++ l1RDD.map{k => (k, temp2RDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
-//    val finalRDD = temp1RDD ++ l0RDD.map{k => (k, temp1RDD.filter{el => el._1.containsSlice(k)}.map(_._2).fold(0.0)(_+_))}
-
-    returnedRDD.map{kv => (kv._1.mkString(""), kv._2)}
+    finalRDD.map{kv => (kv._1.mkString(","), kv._2)}
   }
 
 }
