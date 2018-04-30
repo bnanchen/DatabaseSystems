@@ -32,8 +32,9 @@ class CubeOperator(reducers: Int) {
 
   def cube_naive(dataset: Dataset, groupingAttributes: List[String], aggAttribute: String, agg: String): RDD[(String, Double)] = {
     //TODO naive algorithm for cube computation
-
-
+    val rdd = dataset.getRDD()
+    val schema = dataset.getSchema()
+    // TODO je n'y comprends rien
     null
   }
 
@@ -56,10 +57,6 @@ class CubeOperator(reducers: Int) {
       case "MIN" => values.min
       case "MAX" => values.max
     }).cache() // TODO useful?
-
-    val partialKeyRDD = returnedRDD.keys.flatMap(k => k.toSet.subsets.map(_.toList)).sortBy(_.size, ascending=false)
-    val mapReturnedRDD = returnedRDD.collectAsMap()
-    // TODO make something with with an accumulator
 
     val finalRDD = returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
 

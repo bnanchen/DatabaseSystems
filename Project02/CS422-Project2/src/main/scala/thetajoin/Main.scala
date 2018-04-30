@@ -10,12 +10,12 @@ object Main {
   def main(args: Array[String]) {
     val reducers = 10
     val maxInput = 1000 
-    val inputFile1="/project2/input1_1K.csv"
-    val inputFile2="/project2/input2_1K.csv"
+    val inputFile1="src/test/resources/input1_1K.csv"
+    val inputFile2="src/test/resources/input2_1K.csv"
     
     val output = "output"
     
-    val sparkConf = new SparkConf().setAppName("CS422-Project2")//.setMaster("local[16]")
+    val sparkConf = new SparkConf().setAppName("CS422-Project2").setMaster("local[16]") // TODO setMaster("local[16]") was uncommented
     val ctx = new SparkContext(sparkConf)
     val sqlContext = new org.apache.spark.sql.SQLContext(ctx)   
     

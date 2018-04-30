@@ -35,7 +35,15 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     val index1 = schema1.indexOf(attr1)
     val index2 = schema2.indexOf(attr2)        
     
-    // implement the algorithm
+    // TODO implement the algorithm
+    val cs = numS / Math.sqrt(numS * numR / reducers)
+    val cr = numR / Math.sqrt(numS * numR / reducers)
+
+    horizontalBoundaries = rdd1.map(_(index1)).sample(false, cs/numS).map(_.toString.toInt).collect()
+    verticalBoundaries = rdd2.map(_(index2)).sample(false, cr/numR).map(_.toString.toInt).collect()
+
+    // TODO compute number of elements per bucket
+
     null
   }  
     
