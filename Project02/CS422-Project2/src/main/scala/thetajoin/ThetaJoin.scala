@@ -2,6 +2,7 @@ package thetajoin
 
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
+import org.apache.spark.sql.Row // TODO on a le droit?
 
 
 class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends java.io.Serializable {
@@ -17,7 +18,7 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
   // helper structures, you are allowed
   // not to use them
   var horizontalCounts = Array[Int]()
-  var verticalCounts = Array[Int]()      
+  var verticalCounts = Array[Int]()
   
   /*
    * this method gets as input two datasets and the condition
@@ -26,11 +27,11 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
    * You are not allowed to change the definition of this function.
    * */  
   def theta_join(dataset1: Dataset, dataset2: Dataset, attr1:String, attr2:String, op:String): RDD[(Int, Int)] = {
-    val schema1 = dataset1.getSchema
-    val schema2 = dataset2.getSchema        
+    val schema1 = dataset1.getSchema()
+    val schema2 = dataset2.getSchema()
     
-    val rdd1 = dataset1.getRDD
-    val rdd2 = dataset2.getRDD
+    val rdd1 = dataset1.getRDD()
+    val rdd2 = dataset2.getRDD()
     
     val index1 = schema1.indexOf(attr1)
     val index2 = schema2.indexOf(attr2)        
@@ -39,10 +40,49 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     val cs = numS / Math.sqrt(numS * numR / reducers)
     val cr = numR / Math.sqrt(numS * numR / reducers)
 
-    horizontalBoundaries = rdd1.map(_(index1)).sample(false, cs/numS).map(_.toString.toInt).collect()
-    verticalBoundaries = rdd2.map(_(index2)).sample(false, cr/numR).map(_.toString.toInt).collect()
+    val intAttrRDD1: RDD[Int] = rdd1.map(_(index1).toString.toInt)
+    val intAttrRDD2: RDD[Int] = rdd2.map(_(index2).toString.toInt)
 
-    // TODO compute number of elements per bucket
+    horizontalBoundaries = intAttrRDD1.sample(withReplacement = false, cs/numS).collect().sortWith{_<=_}
+    verticalBoundaries = intAttrRDD2.sample(withReplacement = false, cr/numR).collect().sortWith{_<=_}
+
+    horizontalCounts = Array.fill(horizontalBoundaries.length+1){0}
+
+    println("horizontalBoundaries")
+    horizontalBoundaries.foreach(x => print(x+" "))
+
+    for {
+      i <- horizontalBoundaries.indices
+    } {
+      horizontalCounts(i) = intAttrRDD1.filter{el =>
+        (i == 0 && el < horizontalBoundaries(i)) || (i == horizontalBoundaries.length && el > horizontalBoundaries(i)) ||(horizontalBoundaries(i) < el && horizontalBoundaries(i+1) >= el)
+      }.count().toInt
+    }
+
+    println(intAttrRDD1.count())
+    println(horizontalCounts.fold(0)(_+_))
+
+    horizontalCounts.foreach(println)
+
+//    intAttrRDD1.foreach{el =>
+//    var done = true
+//      for{
+//        i <- horizontalBoundaries.indices
+//        if done
+//      } {
+//        if (i == 0 && el < horizontalBoundaries(i)) {
+//          horizontalCounts(i) = horizontalCounts(i) + 1
+//          done = false
+//        } else if (i == horizontalBoundaries.length-1 && el > horizontalBoundaries(i)) {
+//          horizontalCounts(i) = horizontalCounts(i) + 1
+//          done = false
+//        } else if (horizontalBoundaries(i) < el && horizontalBoundaries(i+1) >= el) {
+//          horizontalCounts(i) = horizontalCounts(i) + 1
+//          done = false
+//        }
+//      }
+//    }
+//    horizontalCounts.foreach(println(_))
 
     null
   }  
@@ -77,6 +117,6 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
       case ">" => value1 > value2
       case ">=" => value1 >= value2
     }
-  }    
+  }
 }
 

@@ -45,7 +45,7 @@ object Main {
     val tj = new ThetaJoin(dataset1.getRDD().count, dataset2.getRDD.count, reducers, maxInput)
     val res = tj.theta_join(dataset1, dataset2, "num", "num", "=")
     
-    println(res.count)
+//    println(res.count)
     //res.saveAsTextFile(output)
   }     
 }
