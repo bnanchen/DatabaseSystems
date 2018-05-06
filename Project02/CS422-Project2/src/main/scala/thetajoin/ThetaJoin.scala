@@ -47,43 +47,23 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     verticalBoundaries = intAttrRDD2.sample(withReplacement = false, cr/numR).collect().sortWith{_<=_}
 
     horizontalCounts = Array.fill(horizontalBoundaries.length+1){0}
+    verticalCounts = Array.fill(verticalBoundaries.length+1){0}
 
-    println("horizontalBoundaries")
-    horizontalBoundaries.foreach(x => print(x+" "))
+    val horizontalBuckets = (Int.MinValue +: horizontalBoundaries).zip(horizontalBoundaries :+ Int.MaxValue)
+    val verticalBuckets = (Int.MinValue +: verticalBoundaries).zip(verticalBoundaries :+ Int.MaxValue)
 
     for {
-      i <- horizontalBoundaries.indices
+      i <- horizontalCounts.indices
     } {
-      horizontalCounts(i) = intAttrRDD1.filter{el =>
-        (i == 0 && el < horizontalBoundaries(i)) || (i == horizontalBoundaries.length && el > horizontalBoundaries(i)) ||(horizontalBoundaries(i) < el && horizontalBoundaries(i+1) >= el)
-      }.count().toInt
+      horizontalCounts(i) = intAttrRDD1.filter{el => horizontalBuckets(i)._1 < el && horizontalBuckets(i)._2 >= el}.count().toInt
     }
 
-    println(intAttrRDD1.count())
-    println(horizontalCounts.fold(0)(_+_))
-
-    horizontalCounts.foreach(println)
-
-//    intAttrRDD1.foreach{el =>
-//    var done = true
-//      for{
-//        i <- horizontalBoundaries.indices
-//        if done
-//      } {
-//        if (i == 0 && el < horizontalBoundaries(i)) {
-//          horizontalCounts(i) = horizontalCounts(i) + 1
-//          done = false
-//        } else if (i == horizontalBoundaries.length-1 && el > horizontalBoundaries(i)) {
-//          horizontalCounts(i) = horizontalCounts(i) + 1
-//          done = false
-//        } else if (horizontalBoundaries(i) < el && horizontalBoundaries(i+1) >= el) {
-//          horizontalCounts(i) = horizontalCounts(i) + 1
-//          done = false
-//        }
-//      }
-//    }
-//    horizontalCounts.foreach(println(_))
-
+    for {
+      i <- verticalCounts.indices
+    } {
+      verticalCounts(i) = intAttrRDD2.filter{el => verticalBuckets(i)._1 < el && verticalBuckets(i)._2 >= el}.count().toInt
+    }
+    
     null
   }  
     
