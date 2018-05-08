@@ -21,8 +21,11 @@ class ThetaJoinTest extends FlatSpec {
     val inputFile1="input1_1K.csv"
     val inputFile2="input2_1K.csv"
     
-    val input1 = new File(getClass.getResource(inputFile1).getFile).getPath
-    val input2 = new File(getClass.getResource(inputFile2).getFile).getPath
+//    val input1 = new File(getClass.getResource(inputFile1).getFile).getPath
+//    val input2 = new File(getClass.getResource(inputFile2).getFile).getPath
+
+    val input1="src/test/resources/input1_1K.csv"
+    val input2="src/test/resources/input2_1K.csv"
       
     val output = "output"
     
