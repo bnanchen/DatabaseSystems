@@ -16,7 +16,7 @@ class ThetaJoinTest extends FlatSpec {
   
   def test() {
     val reducers = 10
-    val maxInput = 1000 
+    val maxInput = 100
     
     val inputFile1="input1_1K.csv"
     val inputFile2="input2_1K.csv"
@@ -24,8 +24,11 @@ class ThetaJoinTest extends FlatSpec {
 //    val input1 = new File(getClass.getResource(inputFile1).getFile).getPath
 //    val input2 = new File(getClass.getResource(inputFile2).getFile).getPath
 
-    val input1="src/test/resources/input1_1K.csv"
-    val input2="src/test/resources/input2_1K.csv"
+    var input1 = "src/test/resources/" + inputFile1
+    var input2 = "src/test/resources/" + inputFile2
+
+//    input1 = "src/test/resources/test_1.csv"
+//    input2 = "src/test/resources/test_2.csv"
       
     val output = "output"
     
@@ -54,12 +57,12 @@ class ThetaJoinTest extends FlatSpec {
     
     val t1 = System.nanoTime    
     val tj = new ThetaJoin(dataset1.getRDD.count, dataset2.getRDD.count, reducers, maxInput)
-    val res = tj.theta_join(dataset1, dataset2, "num", "num", "<")           
+    val res = tj.theta_join(dataset1, dataset2, "num", "num", "=")
     
     val resultSize = res.count     
     val t2 = System.nanoTime
     
-    println((t2-t1)/(Math.pow(10,9)))
+    println("My method "+ (t2-t1)/(Math.pow(10,9)))
     
     val index1 = schema1.indexOf("num")
     val index2 = schema2.indexOf("num")          
@@ -67,7 +70,7 @@ class ThetaJoinTest extends FlatSpec {
     val cartRes = rdd1.cartesian(rdd2).flatMap(x => {
       val v1 = x._1(index1).asInstanceOf[Int]
       val v2 = x._2(index2).asInstanceOf[Int]
-      if(v1 < v2)
+      if(v1 == v2)
         List((v1, v2))
       else
         List()

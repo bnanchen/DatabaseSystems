@@ -8,12 +8,25 @@ import org.apache.spark.sql.Row
 import scala.collection.mutable.ListBuffer // TODO on a le droit?
 
 // class representing a Bucket (or a Region)
+/**
+  *
+  * @param horizontalStart inclusive
+  * @param horizontalEnd exclusive
+  * @param verticalStart inclusive
+  * @param verticalEnd exclusive
+  */
 case class Bucket(horizontalStart: Int, horizontalEnd: Int, verticalStart: Int, verticalEnd: Int) {
   def contains(index: Long, horizontal: Boolean): Boolean = {
     if (horizontal)
-      horizontalStart < index && index <= horizontalEnd // TODO problem with 0????
+      if (index == 0)
+        horizontalStart <= index && index <= horizontalEnd
+      else
+        horizontalStart < index && index <= horizontalEnd
     else
-      verticalStart < index && index <= verticalEnd
+      if (index == 0)
+        verticalStart <= index && index <= verticalEnd
+      else
+        verticalStart < index && index <= verticalEnd
   }
 }
 
@@ -48,7 +61,6 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     val index1 = schema1.indexOf(attr1)
     val index2 = schema2.indexOf(attr2)
 
-    // TODO implement the algorithm
     // Equi-Depth Histograms
     val cs = numS / Math.sqrt(numS * numR / reducers)
     val cr = numR / Math.sqrt(numS * numR / reducers)
@@ -56,8 +68,8 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     val intRDD1: RDD[List[Int]] = rdd1.map(_.toSeq.toList.map(_.toString.toInt)).sortBy(_(index1))
     val intRDD2: RDD[List[Int]] = rdd2.map(_.toSeq.toList.map(_.toString.toInt)).sortBy(_(index2))
 
-    val intAttrRDD1: RDD[Int] = intRDD1.map(_(index1))//.toString.toInt)
-    val intAttrRDD2: RDD[Int] = intRDD2.map(_(index2))//.toString.toInt)
+    val intAttrRDD1: RDD[Int] = intRDD1.map(_(index1))
+    val intAttrRDD2: RDD[Int] = intRDD2.map(_(index2))
 
     horizontalBoundaries = intAttrRDD1.sample(withReplacement = false, cs/numS).collect().sortWith{_<=_}
     verticalBoundaries = intAttrRDD2.sample(withReplacement = false, cr/numR).collect().sortWith{_<=_}
@@ -83,12 +95,9 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     // M-Bucket-I
     val intAttrRDD2Size = intAttrRDD2.count()
 
-    val buckets: List[Bucket] = MBucketI(bucketsize, intAttrRDD2Size.toInt, horizontalCounts.toList, verticalCounts.toList, horizontalBuckets, verticalBuckets)
+    val buckets: List[Bucket] = MBucketI(bucketsize, intAttrRDD2Size.toInt, horizontalCounts.toList, verticalCounts.toList, horizontalBuckets, verticalBuckets, op)
 
-    buckets.foreach(println)
-
-    val numPartitions = buckets.size
-
+    // return a RDD of tuples with the bucket number and the attribute
     val bucketRDD1: RDD[(Int, Int)] = intRDD1.zipWithIndex().map{row => (whichBucket(row._2, buckets, horizontal = true), row._1)}.filter{el => el._1.nonEmpty}.flatMap{x => x._1.map{b => (b, x._2(index1))}}
     val bucketRDD2: RDD[(Int, Int)] = intRDD2.zipWithIndex().map{row => (whichBucket(row._2, buckets, horizontal = false), row._1)}.filter{el => el._1.nonEmpty}.flatMap{x => x._1.map{b => (b, x._2(index2))}}
 
@@ -98,7 +107,7 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     partitionnedRDD1.zipPartitions(partitionnedRDD2){case (x,y) => local_thetajoin(x, y, op)}
   }
 
-  def MBucketI(maxInput: Int, numbRows: Int, horizontalCounts: List[Int], verticalCounts: List[Int], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)]): List[Bucket] = {
+  def MBucketI(maxInput: Int, numbRows: Int, horizontalCounts: List[Int], verticalCounts: List[Int], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)], op: String): List[Bucket] = {
     var row = 0
     var buckets: List[Bucket] = List()
 
@@ -106,25 +115,33 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     val verticalIndices: List[(Int, Int)] = indicesM(verticalCounts, 0)
 
     while (row < numbRows) {
-      val result: (Int, List[Bucket]) = coverSubMatrix(row, bucketsize, horizontalIndices, verticalIndices, horizontalBuckets, verticalBuckets) // TODO verify how it is deal with r and row
+      val result: (Int, List[Bucket]) = coverSubMatrix(row, bucketsize, horizontalIndices, verticalIndices, horizontalBuckets, verticalBuckets, op)
       row = result._1
       buckets = buckets ::: result._2
-
-//      if (r < 0) // TODO useless?
-//        return false
     }
 
     buckets
   }
 
-  def coverSubMatrix(row: Int, maxInput: Int, horizontalIndices: List[(Int, Int)], verticalIndices: List[(Int, Int)], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)]): (Int, List[Bucket]) = {
+  def coverSubMatrix(row: Int, maxInput: Int, horizontalIndices: List[(Int, Int)], verticalIndices: List[(Int, Int)], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)], op: String): (Int, List[Bucket]) = {
     var maxScore: Double = -1.0
     var bestBuckets: List[Bucket] = List()
     var bestRow: Int = -1
+    var startHorizontal = Int.MaxValue
+    var endHorizontal = 0
+    var widthCandidateCells = 0
+    var candidateCellsCovered: Int = 0
 
-    for (i <- 1 until maxInput) {
-      val (buckets: List[Bucket], candidateCellsCovered: Int) = coverRows(row, row+i, maxInput, horizontalIndices, verticalIndices, horizontalBuckets, verticalBuckets)
-      val score: Double = if (buckets.isEmpty) -1.0 else candidateCellsCovered/buckets.size
+    for (i <- 1 until maxInput
+         if row+i <= verticalIndices.last._2) {
+      val result = coverRows(row, row+i, maxInput, horizontalIndices, verticalIndices, horizontalBuckets, verticalBuckets, startHorizontal, endHorizontal, widthCandidateCells, candidateCellsCovered, op)
+      val buckets: List[Bucket] = result._1
+      candidateCellsCovered =  result._2
+      startHorizontal = result._3
+      endHorizontal = result._4
+      widthCandidateCells = result._5
+
+      val score: Double = if (buckets.isEmpty) -1.0 else candidateCellsCovered.toDouble/buckets.size.toDouble
 
       if (score >= maxScore) {
         bestRow = row + i
@@ -133,14 +150,14 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
       }
     }
 
-    (bestRow + 1, bestBuckets) //, r - bucketUsed) // TODO useless?
+    (bestRow, bestBuckets)
   }
 
-  def coverRows(rowf: Int, rowl: Int, maxInput: Int, horizontalIndices: List[(Int, Int)], verticalIndices: List[(Int, Int)], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)]): (List[Bucket], Int) = {
+  def coverRows(rowf: Int, rowl: Int, maxInput: Int, horizontalIndices: List[(Int, Int)], verticalIndices: List[(Int, Int)], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)], oldStartHorizontal: Int, oldEndHorizontal: Int, oldWidth: Int, oldCovered: Int, op: String): (List[Bucket], Int, Int, Int, Int) = {
     var buckets: List[Bucket] = List()
     var notDefined: Boolean = true
 
-    val (widthCandidateCells: Int, candidateCellsCovered: Int, startHorizontal: Int, endHorizontal: Int) = candidateCells(Bucket(0, 0, rowf, rowl), horizontalIndices, verticalIndices, horizontalBuckets, verticalBuckets)
+    val (widthCandidateCells: Int, candidateCellsCovered: Int, startHorizontal: Int, endHorizontal: Int) = candidateCells(Bucket(0, 0, rowf, rowl), horizontalIndices, verticalIndices, horizontalBuckets, verticalBuckets, oldStartHorizontal, oldEndHorizontal, oldWidth, oldCovered, op)
 
     var dimension = maxInput
 
@@ -152,62 +169,64 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
       }
     }
 
-    for (column <- startHorizontal until widthCandidateCells/*horizontalIndices.last._2*/ by dimension) { // TODO correct + dimension?
+    for (column <- startHorizontal until (startHorizontal + widthCandidateCells) by dimension) {
       val bucket = Bucket(column, column + dimension, rowf, rowl)
       buckets = buckets :+ bucket
     }
 
-//    for {dimension <- maxInput until 1 by -1
-//        if horizontalIndices.last._2 % dimension == 0} {
-//      for (column <- 0 until horizontalIndices.last._2 by dimension) { // TODO to verify!!
-//        val bucket = Bucket(column, column + dimension, rowf, rowl) // TODO correct + dimension?
-//        candidateCellsCovered += candidateCells(bucket, horizontalIndices, verticalIndices, horizontalBuckets, verticalBuckets)
-//        buckets = buckets :+ bucket
-//      }
-//    }
-
-    (buckets, candidateCellsCovered)
+    (buckets, candidateCellsCovered, startHorizontal, endHorizontal, widthCandidateCells)
   }
 
-  // Calculate the number of candidate cells in the area
-  def candidateCells(bucket: Bucket, horizontalIndices: List[(Int, Int)], verticalIndices: List[(Int, Int)], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)]): (Int, Int, Int, Int) = {
-    // TODO surely to be optimized!
-    var maxWidth = 0
-    var candidateCellsCovered = 0
-    var startHorizontal = Int.MaxValue
-    var endHorizontal = 0
+  // Compute the number of candidate cells in the area
+  def candidateCells(bucket: Bucket, horizontalIndices: List[(Int, Int)], verticalIndices: List[(Int, Int)], horizontalBuckets: Array[(Int, Int)], verticalBuckets: Array[(Int, Int)], accStartHorizontal: Int, accEndHorizontal: Int, accWidth: Int, accCovered: Int, op: String): (Int, Int, Int, Int) = {
+    var maxWidth: Int = accWidth
+    var candidateCellsCovered: Int = accCovered
+    var startHorizontal: Int = accStartHorizontal
+    var endHorizontal: Int = accEndHorizontal
 
-    //verticalIndices.foreach(println)
-    //horizontalIndices.foreach(println)
-
-    //println(bucket.verticalStart +" to "+ bucket.verticalEnd)
-    //println(0 +" until "+ horizontalIndices.last._2)
-
-    for (i <- bucket.verticalStart to bucket.verticalEnd) { // TODO inclusive?
-      maxWidth = 0
+    for (i <- bucket.verticalStart until bucket.verticalEnd) { // exclusive
       var width = 0
-      for (j <- 0 until horizontalIndices.last._2) {
+      var tempStartHorizontal = Int.MaxValue
+      var tempEndHorizontal = 0
+      for (j <- 0 until horizontalIndices.last._2) { // exclusive
         // calculate the bucket in which is the cell
-        val verticalInterval: (Int, Int) = verticalBuckets(verticalIndices.indexWhere(el => (i >= el._1 && i < el._2))) // TODO problem des fois l'index n'existe pas!!!!!!!!
-        val horizontalInterval: (Int, Int) = horizontalBuckets(horizontalIndices.indexWhere(el => (j >= el._1 && j < el._2))) // TODO problem des fois l'index n'existe pas!!!!!!!!
+        val verticalInterval: (Int, Int) = verticalBuckets((verticalIndices.init :+ (verticalIndices.last._1, Int.MaxValue)).indexWhere(el => i >= el._1 && i < el._2))
+        val horizontalInterval: (Int, Int) = horizontalBuckets((horizontalIndices.init :+ (horizontalIndices.last._1, Int.MaxValue)).indexWhere(el => j >= el._1 && j < el._2))
 
         // if the two intervals are overlapping then it is a candidate case
-        if (verticalInterval._1 <= horizontalInterval._2 && horizontalInterval._1 <= verticalInterval._1) {
+        if (isCandidateCell(horizontalInterval, verticalInterval, op)) {
           width += 1
           candidateCellsCovered += 1
           if (width == 1 && j < startHorizontal) {
+            tempStartHorizontal = j
             startHorizontal = j
+          } else if (width == 1) {
+            tempStartHorizontal = j
           }
         }
       }
 
+      tempEndHorizontal = tempStartHorizontal + width - 1
+
       if (width > maxWidth) {
         maxWidth = width
         endHorizontal = startHorizontal + width - 1
+      } else if (tempStartHorizontal < startHorizontal) {
+        maxWidth = maxWidth + (startHorizontal - tempStartHorizontal)
+      } else if (tempEndHorizontal > endHorizontal) {
+        maxWidth = maxWidth + (tempEndHorizontal - endHorizontal)
       }
     }
 
-    (maxWidth, candidateCellsCovered, startHorizontal, endHorizontal)
+    (maxWidth, candidateCellsCovered, startHorizontal, endHorizontal) // endHorizontal is inclusive
+  }
+
+  def isCandidateCell(horizontalInterval: (Int, Int), verticalInterval: (Int, Int), op: String): Boolean = op match {
+    case "=" => verticalInterval._1 <= horizontalInterval._2 && horizontalInterval._1 <= verticalInterval._2
+    case "<" => horizontalInterval._1 < verticalInterval._2
+    case "<=" => horizontalInterval._1 <= verticalInterval._2
+    case ">" => horizontalInterval._2 > verticalInterval._1
+    case ">=" => horizontalInterval._2 >= verticalInterval._1
   }
     
   /*
@@ -247,7 +266,7 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     case x :: xs => (acc, acc+x) :: indicesM(xs, acc+x)
   }
 
-  // return in which bucket the row lies
+  // return in which bucket(s) the row lies
   def whichBucket(index: Long, buckets: List[Bucket], horizontal: Boolean): List[Int] = {
     var numBuckets: List[Int] = List()
     for (bucket <- buckets) {
@@ -255,8 +274,7 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
         numBuckets = numBuckets :+ buckets.indexOf(bucket)
       }
     }
-//    println("CACA")
-    return numBuckets
+    numBuckets
   }
 }
 

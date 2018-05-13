@@ -52,12 +52,14 @@ class CubeTest extends FlatSpec {
     q1.show(119) // 11976
 
     // Verify correct number of lines
-    assert(q1.rdd.count() == res.count())
+    assert(q1.rdd.count() === res.count())
+    println(q1.rdd.count() +" "+ res.count())
 
     // Verify correct count number
     val q2 = q1.agg(sum("sum supplycost"))
     val value = q2.rdd.map(_.toSeq.toList.map(_.toString())).collect()(0)(0).toDouble
     val valueToVerify = res.map{x => x._2}.fold(0.0)(_+_)
-    assert(value == valueToVerify)
+    assert(value === valueToVerify)
+    println(value +" "+ valueToVerify)
   }
 }

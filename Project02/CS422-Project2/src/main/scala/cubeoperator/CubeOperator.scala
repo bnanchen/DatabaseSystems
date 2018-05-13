@@ -58,7 +58,18 @@ class CubeOperator(reducers: Int) {
       case "MAX" => values.max
     }).cache() // TODO useful?
 
-    val finalRDD = returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
+    val finalRDD = agg match {
+      case "COUNT" | "SUM" =>
+        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
+      case "MIN" =>
+        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.min)} // List(1,2) -> List(), List(1), List(2), List(1,2)
+      case "MAX" =>
+        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.max)} // List(1,2) -> List(), List(1), List(2), List(1,2)
+      case "AVG" =>
+        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2) // TODO false
+    }
+
+//    val finalRDD = returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
 
     finalRDD.map{kv => (kv._1.mkString(","), kv._2)}
   }
