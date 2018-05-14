@@ -19,22 +19,24 @@ import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.streaming._
+
 import scala.collection.Seq
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.Strategy
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.streaming.{ Seconds, StreamingContext }
-import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
-import java.net.URI;
+import org.apache.spark.streaming.{Duration, Seconds, StreamingContext}
+import org.apache.commons.io.IOUtils
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FSDataInputStream
+import org.apache.hadoop.fs.FSDataOutputStream
+import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.Path
+import java.io.BufferedWriter
+import java.io.OutputStreamWriter
+import java.net.URI
 
+import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.util.sketch.CountMinSketch
 
 class SparkStreaming(sparkConf: SparkConf, args: Array[String]) {
@@ -59,13 +61,14 @@ class SparkStreaming(sparkConf: SparkConf, args: Array[String]) {
   def consume() {
 
     // create a DStream that represents streaming data from a directory source.
-    val linesDStream = ssc.textFileStream(inputDirectory);
+    val linesDStream: DStream[String] = ssc.textFileStream(inputDirectory);
 
     // parse the stream. (line -> (IP1, IP2))
-    val words = linesDStream.map(x => (x.split("\t")(0), x.split("\t")(1)))
+    val words: DStream[(String, String)] = linesDStream.map(x => (x.split("\t")(0), x.split("\t")(1)))
 
     if (execType.contains("precise")) {
       //TODO : Implement precise calculation
+      words.countByValueAndWindow(Duration(seconds*1000), Duration(seconds*1000)).foreachRDD(rdd => rdd.foreach(println))
     } else if (execType.contains("approx")) {
       //TODO : Implement approx calculation (you will have to implement the CM-sketch as well
     }
