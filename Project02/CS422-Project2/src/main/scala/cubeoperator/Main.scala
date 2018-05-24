@@ -9,9 +9,9 @@ import java.io._
 object Main {
   def main(args: Array[String]) {
 
-    val reducers = 10
+    val reducers = 100
 
-    val inputFile = "src/test/resources/lineorder_small.tbl"
+    val inputFile = "src/test/resources/lineorder_medium.tbl"
     val output = "output"
 
     val sparkConf = new SparkConf().setAppName("CS422-Project2").setMaster("local[16]") // TODO .setMaster() was commented
@@ -33,9 +33,15 @@ object Main {
 
     val cb = new CubeOperator(reducers)
 
-    var groupingList = List("lo_suppkey","lo_shipmode","lo_orderdate")
+    val groupingList = List("lo_suppkey","lo_shipmode","lo_orderdate")
 
-    val res = cb.cube(dataset, groupingList, "lo_supplycost", "COUNT")
+    val t1 = System.nanoTime()
+
+    val res = cb.cube(dataset, groupingList, "lo_supplycost", "AVG")
+
+    //val cubeNaive = cb.cube_naive(dataset, groupingList, "lo_supplycost", "AVG")
+
+    println("TIME: "+ (System.nanoTime()-t1)/(Math.pow(10,9)))
 
     /*
        The above call corresponds to the query:

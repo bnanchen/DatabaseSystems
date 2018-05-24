@@ -102,7 +102,7 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     val bucketRDD2: RDD[(Int, Int)] = intRDD2.zipWithIndex().map{row => (whichBucket(row._2, buckets, horizontal = false), row._1)}.filter{el => el._1.nonEmpty}.flatMap{x => x._1.map{b => (b, x._2(index2))}}
 
     val partitionnedRDD1: RDD[(Int, Int)] = bucketRDD1.partitionBy(new HashPartitioner(reducers))
-    val partitionnedRDD2: RDD[((Int, Int))] = bucketRDD2.partitionBy(new HashPartitioner(reducers))
+    val partitionnedRDD2: RDD[(Int, Int)] = bucketRDD2.partitionBy(new HashPartitioner(reducers))
 
     partitionnedRDD1.zipPartitions(partitionnedRDD2){case (x,y) => local_thetajoin(x, y, op)}
   }
@@ -184,26 +184,35 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
     var startHorizontal: Int = accStartHorizontal
     var endHorizontal: Int = accEndHorizontal
 
+    val verticalIndicesToInfinite = verticalIndices.init :+ (verticalIndices.last._1, Int.MaxValue)
+    val horizontalIndicesToInfinite = horizontalIndices.init :+ (horizontalIndices.last._1, Int.MaxValue)
+
     for (i <- bucket.verticalStart until bucket.verticalEnd) { // exclusive
       var width = 0
       var tempStartHorizontal = Int.MaxValue
       var tempEndHorizontal = 0
-      for (j <- 0 until horizontalIndices.last._2) { // exclusive
-        // calculate the bucket in which is the cell
-        val verticalInterval: (Int, Int) = verticalBuckets((verticalIndices.init :+ (verticalIndices.last._1, Int.MaxValue)).indexWhere(el => i >= el._1 && i < el._2))
-        val horizontalInterval: (Int, Int) = horizontalBuckets((horizontalIndices.init :+ (horizontalIndices.last._1, Int.MaxValue)).indexWhere(el => j >= el._1 && j < el._2))
+      // calculate the interval of the vertical bucket
+      val verticalInterval: (Int, Int) = verticalBuckets(verticalIndicesToInfinite.indexWhere(el => i >= el._1 && i < el._2))
+      var j = 0
 
-        // if the two intervals are overlapping then it is a candidate case
+      while(j < horizontalIndices.last._2) {
+        val bucketIndex: Int = horizontalIndicesToInfinite.indexWhere(el => j >= el._1 && j < el._2)
+        // calculate the interval of the horizontal bucket
+        val horizontalInterval: (Int, Int) = horizontalBuckets(bucketIndex)
+
+        val numbCells = horizontalIndices(bucketIndex)._2 - horizontalIndices(bucketIndex)._1
+
         if (isCandidateCell(horizontalInterval, verticalInterval, op)) {
-          width += 1
-          candidateCellsCovered += 1
-          if (width == 1 && j < startHorizontal) {
+          if (width == 0 && j < startHorizontal) {
             tempStartHorizontal = j
             startHorizontal = j
-          } else if (width == 1) {
+          } else if (width == 0) {
             tempStartHorizontal = j
           }
+          width = width + numbCells
+          candidateCellsCovered = candidateCellsCovered + numbCells
         }
+        j = j + numbCells
       }
 
       tempEndHorizontal = tempStartHorizontal + width - 1
@@ -223,6 +232,7 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
 
   def isCandidateCell(horizontalInterval: (Int, Int), verticalInterval: (Int, Int), op: String): Boolean = op match {
     case "=" => verticalInterval._1 <= horizontalInterval._2 && horizontalInterval._1 <= verticalInterval._2
+    case "!=" => true
     case "<" => horizontalInterval._1 < verticalInterval._2
     case "<=" => horizontalInterval._1 <= verticalInterval._2
     case ">" => horizontalInterval._2 > verticalInterval._1
@@ -254,6 +264,7 @@ class ThetaJoin(numR: Long, numS: Long, reducers: Int, bucketsize: Int) extends 
   def checkCondition(value1: Int, value2: Int, op:String): Boolean = {
     op match {
       case "=" => value1 == value2
+      case "!=" => value1 != value2
       case "<" => value1 < value2
       case "<=" => value1 <= value2
       case ">" => value1 > value2

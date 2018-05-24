@@ -15,11 +15,11 @@ class ThetaJoinTest extends FlatSpec {
   test
   
   def test() {
-    val reducers = 50
+    val reducers = 10
     val maxInput = 100
     
-    val inputFile1="input1_1K.csv"
-    val inputFile2="input2_1K.csv"
+    val inputFile1="input1_4K.csv"
+    val inputFile2="input2_4K.csv"
     
 //    val input1 = new File(getClass.getResource(inputFile1).getFile).getPath
 //    val input2 = new File(getClass.getResource(inputFile2).getFile).getPath
@@ -62,10 +62,12 @@ class ThetaJoinTest extends FlatSpec {
     val resultSize = res.count     
     val t2 = System.nanoTime
     
-    println("My method "+ (t2-t1)/(Math.pow(10,9)))
-    
+    println("TIME: "+ (t2-t1)/(Math.pow(10,9)))
+
     val index1 = schema1.indexOf("num")
-    val index2 = schema2.indexOf("num")          
+    val index2 = schema2.indexOf("num")
+
+    val t3 = System.nanoTime()
     
     val cartRes = rdd1.cartesian(rdd2).flatMap(x => {
       val v1 = x._1(index1).asInstanceOf[Int]
@@ -75,9 +77,12 @@ class ThetaJoinTest extends FlatSpec {
       else
         List()
     })
+
+    println("CARTESIAN TIME: "+ (System.nanoTime()-t1)/(Math.pow(10,9)))
     
     val resultSizeCartesian = cartRes.count                    
         
     assert(resultSize === resultSizeCartesian)
+    res.take(15).foreach(println)
   }    
 }

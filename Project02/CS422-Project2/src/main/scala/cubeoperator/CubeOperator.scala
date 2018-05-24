@@ -1,5 +1,6 @@
 package cubeoperator
 
+import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 
 class CubeOperator(reducers: Int) {
@@ -22,56 +23,85 @@ class CubeOperator(reducers: Int) {
     val index = groupingAttributes.map(x => schema.indexOf(x))
     val indexAgg = schema.indexOf(aggAttribute)
 
-    // println("Indices: "+ index) 4,5,16
     val tempRDD: RDD[List[String]] = rdd.map(_.toSeq.toList.map(_.toString()))
-    val mappedRDD: RDD[(List[String], Double)] = map(tempRDD, agg, index, indexAgg)
+    val mappedRDD: RDD[(List[String], (Double, Option[Double]))] = map(tempRDD, agg, index, indexAgg)
     val finalRDD: RDD[(String, Double)] = reduce(mappedRDD, agg)
-    //TODO Task 1
+
     finalRDD
   }
 
   def cube_naive(dataset: Dataset, groupingAttributes: List[String], aggAttribute: String, agg: String): RDD[(String, Double)] = {
-    //TODO naive algorithm for cube computation
     val rdd = dataset.getRDD()
     val schema = dataset.getSchema()
-    // TODO je n'y comprends rien
-    null
-  }
 
-  def map(rdd: RDD[List[String]], agg: String, index: List[Int], indexAgg: Int): RDD[(List[String], Double)] = {
-    //val rddKeyValue: RDD[(String, List[String])] = rdd.map{x: List[String] => (index.flatMap(x(_)).foldLeft(""){(acc, a) => acc + a}, x)} // key is a String
-    val rddKeyValue: RDD[(List[String], List[String])] = rdd.map{x: List[String] => (index.map(x(_)).foldLeft(List[String]()){(acc, a) => acc.:+(a)}, x)} // the key now is a List[String]
-    val returnedRDD: RDD[(List[String], Double)] = {
+    val index = groupingAttributes.map(x => schema.indexOf(x))
+    val indexAgg = schema.indexOf(aggAttribute)
+
+    val tempRDD: RDD[List[String]] = rdd.map(_.toSeq.toList.map(_.toString()))
+    val aggValuesRDD: RDD[(List[String], List[String])] = tempRDD.map{x => (index.map(x(_)).foldLeft(List[String]()){(acc, a) => acc.:+(a)}, x)}
+    val combinationRDD: RDD[(List[String], List[String])] = aggValuesRDD.flatMap{x => combinator.combinations(x._1, x._1.size).map{a => (a, x._2)}}
+
+    // MAP
+    val mappedRDD: RDD[(List[String], (Double, Option[Double]))] = {
       agg match {
-        case "COUNT" => rddKeyValue.map{kv => (kv._1, 1)}
-        case "SUM" | "AVG" | "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, kv._2(indexAgg).toDouble)} // TODO correct?!?
+        case "COUNT" => combinationRDD.map{kv => (kv._1, (1, None))}
+        case "AVG" => combinationRDD.map{kv => (kv._1, (kv._2(indexAgg).toDouble, Some(1.0)))}
+        case "SUM" | "MIN" | "MAX" => combinationRDD.map{kv => (kv._1, (kv._2(indexAgg).toDouble, None))}
       }
     }
-    returnedRDD
-  }
 
-  def reduce(rdd: RDD[(List[String], Double)], agg: String): RDD[(String, Double)] = {
-    val returnedRDD: RDD[(List[String], Double)] = rdd.groupByKey(reducers).mapValues(values => agg match { // TODO reducers argument useful?!
-      case "COUNT" | "SUM" => values.sum
-      case "AVG" => values.sum / values.size
-      case "MIN" => values.min
-      case "MAX" => values.max
-    }).cache() // TODO useful?
-
-    val finalRDD = agg match {
-      case "COUNT" | "SUM" =>
-        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
-      case "MIN" =>
-        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.min)} // List(1,2) -> List(), List(1), List(2), List(1,2)
-      case "MAX" =>
-        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.max)} // List(1,2) -> List(), List(1), List(2), List(1,2)
-      case "AVG" =>
-        returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2) // TODO false
+    // REDUCE
+    val reducedRDD: RDD[(List[String], Double)] = {
+      agg match {
+        case "COUNT" | "SUM" =>
+          mappedRDD.map{kv => (kv._1, kv._2._1)}.groupByKey(reducers).map{kv => (kv._1, kv._2.sum)}
+        case "AVG" =>
+          mappedRDD.map{kv => (kv._1, (kv._2._1, kv._2._2.get))}.groupByKey(reducers).map{kv => (kv._1, kv._2.map(_._1).sum / kv._2.map(_._2).sum)}
+        case "MAX" =>
+          mappedRDD.map{kv => (kv._1, kv._2._1)}.groupByKey(reducers).map{kv => (kv._1, kv._2.max)}
+        case "MIN" =>
+          mappedRDD.map{kv => (kv._1, kv._2._1)}.groupByKey(reducers).map{kv => (kv._1, kv._2.min)}
+      }
     }
 
-//    val finalRDD = returnedRDD.flatMap{x => x._1.toSet.subsets.map { a => (a.toList, x._2) } }.groupByKey().map{kv => (kv._1, kv._2.sum)} // List(1,2) -> List(), List(1), List(2), List(1,2)
-
-    finalRDD.map{kv => (kv._1.mkString(","), kv._2)}
+    reducedRDD.map{kv => (kv._1.mkString(","), kv._2)}
   }
 
+  def map(rdd: RDD[List[String]], agg: String, index: List[Int], indexAgg: Int): RDD[(List[String], (Double, Option[Double]))] = {
+    val rddKeyValue: RDD[(List[String], List[String])] = rdd.map{x: List[String] => (index.map(x(_)).foldLeft(List[String]()){(acc, a) => acc.:+(a)}, x)} // the key now is a List[String]
+    val returnedRDD: RDD[(List[String], (Double, Option[Double]))] = {
+      agg match {
+        case "COUNT" => rddKeyValue.map{kv => (kv._1, (1, None))}
+        case "AVG" => rddKeyValue.map{kv => (kv._1, (kv._2(indexAgg).toDouble, Some(1.0)))}
+        case "SUM" | "MIN" | "MAX" => rddKeyValue.map{kv => (kv._1, (kv._2(indexAgg).toDouble, None))}
+      }
+    }
+    returnedRDD.partitionBy(new HashPartitioner(reducers))
+  }
+
+  def reduce(rdd: RDD[(List[String], (Double, Option[Double]))], agg: String): RDD[(String, Double)] = {
+    val returnedRDD: RDD[(List[String], Double)] = agg match {
+      case "SUM" | "COUNT" =>
+        rdd.mapPartitions(p => p.flatMap{x => combinator.combinations(x._1, x._1.size).map { a => (a, x._2._1) }}).groupByKey(reducers).map{kv => (kv._1, kv._2.sum)}
+      case "MIN" =>
+        rdd.mapPartitions(p => p.flatMap{x => combinator.combinations(x._1, x._1.size).map { a => (a, x._2._1) }}).groupByKey(reducers).map{kv => (kv._1, kv._2.min)}
+      case "MAX" =>
+        rdd.mapPartitions(p => p.flatMap{x => combinator.combinations(x._1, x._1.size).map { a => (a, x._2._1) }}).groupByKey(reducers).map{kv => (kv._1, kv._2.max)}
+      case "AVG" =>
+        rdd.mapPartitions(p => p.flatMap{x => combinator.combinations(x._1, x._1.size).map { a => (a, (x._2._1, x._2._2.get))}}).groupByKey(reducers).map{kv => (kv._1, kv._2.map(_._1).sum / kv._2.map(_._2).sum)}
+    }
+
+    returnedRDD.map{kv => (kv._1.mkString(","), kv._2)}
+  }
+}
+
+object combinator {
+  def combinations(l: List[String], n: Int): List[List[String]] = l match {
+    case Nil => List(Nil)
+    case x if n == 0 =>
+      List(x)
+    case x :: xs =>
+      combinations(xs, n - 1).map(x :: _) ::: combinations(xs, n).map(null :: _)
+    case _ => Nil
+  }
 }
